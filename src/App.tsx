@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import AddTransactionPage from "./pages/AddTransactionPage";
+import TransactionHistoryPage from "./pages/TransactionHistoryPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,11 @@ const App = () => (
             <Route path="/add-transaction" element={
               <ProtectedRoute>
                 <AddTransactionPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/transaction-history" element={
+              <ProtectedRoute>
+                <TransactionHistoryPage />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
