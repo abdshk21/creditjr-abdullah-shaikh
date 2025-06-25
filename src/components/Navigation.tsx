@@ -33,7 +33,7 @@ const Navigation = ({
   }];
   return <>
       {/* Mobile Header */}
-      <div className="lg:hidden bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 flex justify-between items-center bg-[#319b31]">
+      <div className="lg:hidden bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 flex justify-between items-center bg-blue-900">
         <h1 className="text-xl font-bold">CreditJR</h1>
         <Button variant="ghost" size="sm" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-white hover:bg-white/20">
           {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
