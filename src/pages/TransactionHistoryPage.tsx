@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, TrendingUp, TrendingDown, UtensilsCrossed, Car, BookOpen, Gamepad2, Gift, DollarSign, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,7 +25,9 @@ const TransactionHistoryPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<string>('all');
 
   const categories = [
     { value: 'Food', label: 'Food', icon: UtensilsCrossed },
@@ -45,6 +49,10 @@ const TransactionHistoryPage = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    applyFilter();
+  }, [transactions, filter]);
+
   const fetchTransactions = async () => {
     try {
       const { data, error } = await supabase
@@ -64,6 +72,14 @@ const TransactionHistoryPage = () => {
       console.error('Error fetching transactions:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const applyFilter = () => {
+    if (filter === 'all') {
+      setFilteredTransactions(transactions);
+    } else {
+      setFilteredTransactions(transactions.filter(transaction => transaction.type === filter));
     }
   };
 
@@ -108,17 +124,40 @@ const TransactionHistoryPage = () => {
           <h1 className="text-3xl font-bold text-[#102c54]">Transaction History</h1>
         </div>
 
+        {/* Filter */}
+        <Card className="shadow-lg border-0">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-gray-700">Filter by:</span>
+              <Select value={filter} onValueChange={setFilter}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="income">Income</SelectItem>
+                  <SelectItem value="expense">Expense</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Transaction List */}
         <div className="space-y-4">
-          {transactions.length === 0 ? (
+          {filteredTransactions.length === 0 ? (
             <Card className="shadow-lg border-0">
               <CardContent className="p-8 text-center">
-                <div className="text-gray-500 text-lg">No transactions found</div>
-                <div className="text-gray-400 text-sm mt-2">Start by adding your first transaction!</div>
+                <div className="text-gray-500 text-lg">
+                  {filter === 'all' ? 'No transactions found' : `No ${filter} transactions found`}
+                </div>
+                <div className="text-gray-400 text-sm mt-2">
+                  {filter === 'all' ? 'Start by adding your first transaction!' : `Try a different filter or add some ${filter} transactions.`}
+                </div>
               </CardContent>
             </Card>
           ) : (
-            transactions.map((transaction) => {
+            filteredTransactions.map((transaction) => {
               const CategoryIcon = getCategoryIcon(transaction.category);
               const isIncome = transaction.type === 'income';
               
@@ -200,12 +239,14 @@ const TransactionHistoryPage = () => {
         </div>
 
         {/* Summary */}
-        {transactions.length > 0 && (
+        {filteredTransactions.length > 0 && (
           <Card className="shadow-lg border-0 bg-gray-50">
             <CardContent className="p-6">
               <div className="text-center">
-                <div className="text-sm text-gray-600 mb-2">Total Transactions</div>
-                <div className="text-2xl font-bold text-[#102c54]">{transactions.length}</div>
+                <div className="text-sm text-gray-600 mb-2">
+                  {filter === 'all' ? 'Total Transactions' : `Total ${filter.charAt(0).toUpperCase() + filter.slice(1)} Transactions`}
+                </div>
+                <div className="text-2xl font-bold text-[#102c54]">{filteredTransactions.length}</div>
               </div>
             </CardContent>
           </Card>
