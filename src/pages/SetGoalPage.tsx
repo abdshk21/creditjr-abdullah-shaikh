@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,11 +16,11 @@ const SetGoalPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [goalAmount, setGoalAmount] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [monthlyAllowance, setMonthlyAllowance] = useState('');
+  const [savingsGoal, setSavingsGoal] = useState('');
 
-  // Fetch existing goal
-  const { data: existingGoal } = useQuery({
+  // Fetch existing goals
+  const { data: existingGoals } = useQuery({
     queryKey: ['goals', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -43,39 +43,46 @@ const SetGoalPage = () => {
     enabled: !!user?.id,
   });
 
-  // Set the input value when existing goal is loaded
-  useState(() => {
-    if (existingGoal?.monthly_saving_goal) {
-      setGoalAmount(existingGoal.monthly_saving_goal.toString());
+  // Set the input values when existing goals are loaded
+  useEffect(() => {
+    if (existingGoals) {
+      if (existingGoals.income_expectation) {
+        setMonthlyAllowance(existingGoals.income_expectation.toString());
+      }
+      if (existingGoals.monthly_saving_goal) {
+        setSavingsGoal(existingGoals.monthly_saving_goal.toString());
+      }
     }
-  }, [existingGoal]);
+  }, [existingGoals]);
 
-  // Mutation to save goal
-  const saveGoalMutation = useMutation({
-    mutationFn: async (amount: number) => {
+  // Mutation to save goals
+  const saveGoalsMutation = useMutation({
+    mutationFn: async ({ allowance, savings }: { allowance: number; savings: number }) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      if (existingGoal) {
-        // Update existing goal
+      if (existingGoals) {
+        // Update existing goals
         const { data, error } = await supabase
           .from('goals')
           .update({ 
-            monthly_saving_goal: amount,
+            income_expectation: allowance,
+            monthly_saving_goal: savings,
             last_updated: new Date().toISOString()
           })
-          .eq('id', existingGoal.id)
+          .eq('id', existingGoals.id)
           .select()
           .single();
         
         if (error) throw error;
         return data;
       } else {
-        // Create new goal
+        // Create new goals
         const { data, error } = await supabase
           .from('goals')
           .insert({
             user_id: user.id,
-            monthly_saving_goal: amount,
+            income_expectation: allowance,
+            monthly_saving_goal: savings,
             last_updated: new Date().toISOString()
           })
           .select()
@@ -88,8 +95,8 @@ const SetGoalPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals', user?.id] });
       toast({
-        title: "Goal Saved!",
-        description: `Your monthly savings goal of $${goalAmount} has been saved.`,
+        title: "Goals Updated!",
+        description: `Your monthly allowance of $${monthlyAllowance} and savings target of $${savingsGoal} have been saved.`,
       });
       // Navigate back to dashboard after a short delay
       setTimeout(() => {
@@ -97,28 +104,47 @@ const SetGoalPage = () => {
       }, 1500);
     },
     onError: (error) => {
-      console.error('Error saving goal:', error);
+      console.error('Error saving goals:', error);
       toast({
         title: "Error",
-        description: "Failed to save your goal. Please try again.",
+        description: "Failed to save your goals. Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  const handleSaveGoal = () => {
-    const amount = parseFloat(goalAmount);
+  const handleSaveGoals = () => {
+    const allowance = parseFloat(monthlyAllowance);
+    const savings = parseFloat(savingsGoal);
     
-    if (!goalAmount || isNaN(amount) || amount <= 0) {
+    if (!monthlyAllowance || isNaN(allowance) || allowance <= 0) {
       toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid amount greater than 0.",
+        title: "Invalid Allowance",
+        description: "Please enter a valid monthly allowance greater than 0.",
         variant: "destructive",
       });
       return;
     }
 
-    saveGoalMutation.mutate(amount);
+    if (!savingsGoal || isNaN(savings) || savings <= 0) {
+      toast({
+        title: "Invalid Savings Goal",
+        description: "Please enter a valid savings target greater than 0.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (savings > allowance) {
+      toast({
+        title: "Invalid Goals",
+        description: "Your savings target should be less than or equal to your allowance.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    saveGoalsMutation.mutate({ allowance, savings });
   };
 
   return (
@@ -134,31 +160,54 @@ const SetGoalPage = () => {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-3xl font-bold text-[#102c54]">Set Your Monthly Savings Goal</h1>
+          <h1 className="text-3xl font-bold text-[#102c54]">Set Your Monthly Goals</h1>
         </div>
 
-        {/* Goal Setting Card */}
+        {/* Goals Setting Card */}
         <Card className="shadow-lg border-0">
           <CardHeader className="bg-[#102c54] text-white rounded-t-lg">
             <CardTitle className="text-xl flex items-center gap-3">
               <Target className="h-6 w-6" />
-              Monthly Savings Goal
+              Monthly Financial Goals
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-8 space-y-6">
+          <CardContent className="p-8 space-y-8">
+            {/* Monthly Allowance Section */}
             <div className="space-y-3">
-              <Label htmlFor="goal-amount" className="text-lg font-medium text-gray-700">
-                Goal Amount ($)
+              <Label htmlFor="monthly-allowance" className="text-lg font-medium text-gray-700">
+                Monthly Allowance ($)
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">
                   $
                 </span>
                 <Input
-                  id="goal-amount"
+                  id="monthly-allowance"
                   type="number"
-                  value={goalAmount}
-                  onChange={(e) => setGoalAmount(e.target.value)}
+                  value={monthlyAllowance}
+                  onChange={(e) => setMonthlyAllowance(e.target.value)}
+                  placeholder="0.00"
+                  className="pl-8 text-lg h-12 border-2 border-gray-200 focus:border-[#102c54]"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            </div>
+
+            {/* Savings Target Section */}
+            <div className="space-y-3">
+              <Label htmlFor="savings-goal" className="text-lg font-medium text-gray-700">
+                Savings Target ($)
+              </Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">
+                  $
+                </span>
+                <Input
+                  id="savings-goal"
+                  type="number"
+                  value={savingsGoal}
+                  onChange={(e) => setSavingsGoal(e.target.value)}
                   placeholder="0.00"
                   className="pl-8 text-lg h-12 border-2 border-gray-200 focus:border-[#102c54]"
                   min="0"
@@ -169,16 +218,16 @@ const SetGoalPage = () => {
 
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
               <p className="text-blue-700 text-sm">
-                💡 <strong>Tip:</strong> Try saving at least 10% of your income.
+                💡 <strong>Tip:</strong> Your savings target should be less than or equal to your allowance.
               </p>
             </div>
 
             <Button
-              onClick={handleSaveGoal}
-              disabled={saveGoalMutation.isPending || !goalAmount}
+              onClick={handleSaveGoals}
+              disabled={saveGoalsMutation.isPending || !monthlyAllowance || !savingsGoal}
               className="w-full bg-[#d8a434] hover:bg-[#d8a434]/90 text-white h-12 text-lg font-medium"
             >
-              {saveGoalMutation.isPending ? (
+              {saveGoalsMutation.isPending ? (
                 <div className="flex items-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   Saving...
@@ -186,14 +235,15 @@ const SetGoalPage = () => {
               ) : (
                 <div className="flex items-center gap-2">
                   <Save className="h-5 w-5" />
-                  Save Goal
+                  Save Goals
                 </div>
               )}
             </Button>
 
-            {existingGoal && (
-              <div className="text-center text-gray-600 text-sm">
-                Current goal: ${existingGoal.monthly_saving_goal || 0}
+            {existingGoals && (
+              <div className="text-center text-gray-600 text-sm space-y-1">
+                <div>Current allowance: ${existingGoals.income_expectation || 0}</div>
+                <div>Current savings target: ${existingGoals.monthly_saving_goal || 0}</div>
               </div>
             )}
           </CardContent>
