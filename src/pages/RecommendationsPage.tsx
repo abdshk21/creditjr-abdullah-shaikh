@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lightbulb, ArrowLeft, TrendingUp, Target, Calendar, Award } from 'lucide-react';
@@ -6,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import FinanceCoachChat from '@/components/FinanceCoachChat';
 
 interface Transaction {
   id: string;
@@ -249,6 +249,9 @@ const RecommendationsPage = () => {
           </Button>
           <h1 className="text-3xl font-bold text-[#102c54]">Your AI Finance Coach</h1>
         </div>
+
+        {/* Chat with Coach Section */}
+        <FinanceCoachChat />
 
         {/* Overall Summary */}
         <Card className="shadow-lg border-0">
