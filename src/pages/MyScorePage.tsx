@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +21,18 @@ interface Transaction {
 interface Goal {
   monthly_saving_goal: number;
   income_expectation: number;
+}
+
+interface CreditScoreBreakdown {
+  spendingControl: number;
+  savingsProgress: number;
+  loggingConsistency: number;
+}
+
+interface CreditScoreData {
+  score: number;
+  breakdown: CreditScoreBreakdown;
+  last_calculated: string;
 }
 
 const MyScorePage = () => {
@@ -94,7 +105,7 @@ const MyScorePage = () => {
         return null;
       }
       
-      return data;
+      return data as CreditScoreData;
     },
     enabled: !!user?.id,
   });
@@ -167,7 +178,19 @@ const MyScorePage = () => {
 
   const calculatedScore = calculateCreditScore();
   const currentScore = creditScore?.score || calculatedScore.score;
-  const breakdown = creditScore?.breakdown || calculatedScore.breakdown;
+  
+  // Type guard to ensure breakdown is properly typed
+  const getBreakdown = (): CreditScoreBreakdown => {
+    if (creditScore?.breakdown && typeof creditScore.breakdown === 'object' && !Array.isArray(creditScore.breakdown)) {
+      const breakdown = creditScore.breakdown as any;
+      if ('spendingControl' in breakdown && 'savingsProgress' in breakdown && 'loggingConsistency' in breakdown) {
+        return breakdown as CreditScoreBreakdown;
+      }
+    }
+    return calculatedScore.breakdown;
+  };
+
+  const breakdown = getBreakdown();
 
   // Get score color and emoji
   const getScoreColor = (score: number) => {
