@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -171,7 +170,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white p-6">
+    <div className="min-h-screen bg-white p-6 pb-24">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="mb-8">
@@ -316,10 +315,10 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Floating Add Button */}
+        {/* Floating Add Button - Fixed positioning with proper z-index */}
         <Button
           size="lg"
-          className="fixed bottom-6 right-6 w-16 h-16 rounded-full bg-[#d8a434] hover:bg-[#d8a434]/90 shadow-lg z-50"
+          className="fixed bottom-28 right-5 w-14 h-14 rounded-full bg-[#d8a434] hover:bg-[#d8a434]/90 shadow-xl z-[60] transition-all duration-200 hover:scale-105"
           onClick={() => window.location.href = '/add-transaction'}
         >
           <Plus className="h-6 w-6" />
