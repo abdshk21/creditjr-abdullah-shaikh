@@ -7,7 +7,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
 import { CalendarIcon, ArrowLeft, UtensilsCrossed, Car, BookOpen, Gamepad2, Gift, DollarSign } from 'lucide-react';
@@ -34,8 +33,6 @@ const AddTransactionPage = () => {
     { value: 'Education', label: 'Education', icon: BookOpen },
     { value: 'Entertainment', label: 'Entertainment', icon: Gamepad2 },
     { value: 'Gifts', label: 'Gifts', icon: Gift },
-    { value: 'Allowance', label: 'Allowance', icon: DollarSign },
-    { value: 'Payday', label: 'Payday', icon: DollarSign },
     { value: 'Misc', label: 'Misc', icon: DollarSign }
   ];
 
@@ -80,11 +77,6 @@ const AddTransactionPage = () => {
     }
   };
 
-  const getCategoryIcon = (categoryValue: string) => {
-    const category = categories.find(cat => cat.value === categoryValue);
-    return category?.icon || DollarSign;
-  };
-
   return (
     <div className="min-h-screen bg-white p-6">
       <div className="max-w-2xl mx-auto space-y-6">
@@ -111,44 +103,53 @@ const AddTransactionPage = () => {
               {/* Type Selection */}
               <div className="space-y-3">
                 <Label className="text-base font-semibold text-[#102c54]">Transaction Type</Label>
-                <RadioGroup
-                  value={type}
-                  onValueChange={(value: 'income' | 'expense') => setType(value)}
-                  className="flex gap-6"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="expense" id="expense" />
-                    <Label 
-                      htmlFor="expense" 
-                      className="text-red-600 font-medium cursor-pointer"
-                    >
-                      Expense
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="income" id="income" />
-                    <Label 
-                      htmlFor="income" 
-                      className="text-green-600 font-medium cursor-pointer"
-                    >
-                      Income
-                    </Label>
-                  </div>
-                </RadioGroup>
+                <div className="flex gap-4">
+                  <Button
+                    type="button"
+                    variant={type === 'expense' ? 'default' : 'outline'}
+                    onClick={() => setType('expense')}
+                    className={cn(
+                      "flex-1 py-3 text-base font-semibold",
+                      type === 'expense' 
+                        ? "bg-red-600 hover:bg-red-700 text-white" 
+                        : "border-red-600 text-red-600 hover:bg-red-50"
+                    )}
+                  >
+                    Expense
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={type === 'income' ? 'default' : 'outline'}
+                    onClick={() => setType('income')}
+                    className={cn(
+                      "flex-1 py-3 text-base font-semibold",
+                      type === 'income' 
+                        ? "bg-green-600 hover:bg-green-700 text-white" 
+                        : "border-green-600 text-green-600 hover:bg-green-50"
+                    )}
+                  >
+                    Income
+                  </Button>
+                </div>
               </div>
 
               {/* Amount */}
               <div className="space-y-2">
                 <Label className="text-base font-semibold text-[#102c54]">Amount *</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="text-lg border-2 focus:border-[#d8a434]"
-                  required
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-lg font-medium text-gray-600">
+                    د.إ
+                  </span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="text-lg border-2 focus:border-[#d8a434] pl-12"
+                    required
+                  />
+                </div>
               </div>
 
               {/* Category */}
