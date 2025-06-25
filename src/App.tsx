@@ -6,9 +6,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import BottomNavigation from "@/components/BottomNavigation";
 import Dashboard from "./pages/Dashboard";
 import AddTransactionPage from "./pages/AddTransactionPage";
 import TransactionHistoryPage from "./pages/TransactionHistoryPage";
+import SetGoalPage from "./pages/SetGoalPage";
+import MyScorePage from "./pages/MyScorePage";
+import RecommendationsPage from "./pages/RecommendationsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,25 +24,48 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/add-transaction" element={
-              <ProtectedRoute>
-                <AddTransactionPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/transaction-history" element={
-              <ProtectedRoute>
-                <TransactionHistoryPage />
-              </ProtectedRoute>
-            } />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <div className="min-h-screen bg-white">
+            <Routes>
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                  <BottomNavigation />
+                </ProtectedRoute>
+              } />
+              <Route path="/add-transaction" element={
+                <ProtectedRoute>
+                  <AddTransactionPage />
+                  <BottomNavigation />
+                </ProtectedRoute>
+              } />
+              <Route path="/transaction-history" element={
+                <ProtectedRoute>
+                  <TransactionHistoryPage />
+                  <BottomNavigation />
+                </ProtectedRoute>
+              } />
+              <Route path="/set-goal" element={
+                <ProtectedRoute>
+                  <SetGoalPage />
+                  <BottomNavigation />
+                </ProtectedRoute>
+              } />
+              <Route path="/my-score" element={
+                <ProtectedRoute>
+                  <MyScorePage />
+                  <BottomNavigation />
+                </ProtectedRoute>
+              } />
+              <Route path="/recommendations" element={
+                <ProtectedRoute>
+                  <RecommendationsPage />
+                  <BottomNavigation />
+                </ProtectedRoute>
+              } />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </div>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
