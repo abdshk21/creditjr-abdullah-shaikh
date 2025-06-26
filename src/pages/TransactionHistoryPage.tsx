@@ -1,4 +1,4 @@
-
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -6,80 +6,81 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Search, Filter, Download } from 'lucide-react';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, CalendarIcon, Search, Filter, TrendingUp, TrendingDown, CheckCircle, AlertTriangle } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
 import FloatingAddButton from '@/components/FloatingAddButton';
-
-interface Transaction {
-  id: string;
-  amount: number;
-  category: string;
-  description: string;
-  date: string;
-  type: string;
-  user_id: string;
-  created_at: string;
-}
 
 const TransactionHistoryPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState('all');
-  const [filterType, setFilterType] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
 
-  const currentMonthStart = startOfMonth(new Date());
-  const currentMonthEnd = endOfMonth(new Date());
-
-  // Fetch all transactions
-  const { data: transactions, isLoading } = useQuery({
-    queryKey: ['transactions', user?.id, currentMonthStart, currentMonthEnd],
-    queryFn: async () => {
+  const { data: transactions, isLoading, error } = useQuery(
+    ['transactions', user?.id, searchTerm, categoryFilter, dateFilter],
+    async () => {
       if (!user?.id) return [];
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('transactions')
         .select('*')
         .eq('user_id', user.id)
         .order('date', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching transactions:', error);
-        return [];
+      if (searchTerm) {
+        query = query.ilike('description', `%${searchTerm}%`);
       }
 
-      return data as Transaction[];
-    },
-    enabled: !!user?.id,
-  });
+      if (categoryFilter) {
+        query = query.eq('category', categoryFilter);
+      }
 
-  // Filter transactions based on search and filter criteria
-  const filteredTransactions = transactions ? transactions
-    .filter(transaction => {
-      const matchesSearch = transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           transaction.category?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = filterCategory === 'all' || transaction.category === filterCategory;
-      const matchesType = filterType === 'all' || transaction.type === filterType;
-      
-      return matchesSearch && matchesCategory && matchesType;
-    }) : [];
+      if (dateFilter) {
+        const formattedDate = format(dateFilter, 'yyyy-MM-dd');
+        query = query.eq('date', formattedDate);
+      }
 
-  // Get unique categories for filter dropdown
-  const categories = transactions ? [...new Set(transactions.map(t => t.category))] : [];
+      const { data, error } = await query;
 
-  const totalIncome = transactions ? transactions
+      if (error) {
+        console.error('Error fetching transactions:', error);
+        throw error;
+      }
+
+      return data;
+    }
+  );
+
+  const allCategories = [...new Set(transactions?.map(t => t.category).filter(Boolean))];
+
+  const filteredTransactions = transactions?.filter(transaction => {
+    const matchesSearch = searchTerm
+      ? transaction.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      : true;
+
+    const matchesCategory = categoryFilter ? transaction.category === categoryFilter : true;
+
+    const matchesDate = dateFilter
+      ? format(parseISO(transaction.date), 'yyyy-MM-dd') === format(dateFilter, 'yyyy-MM-dd')
+      : true;
+
+    return matchesSearch && matchesCategory && matchesDate;
+  }) || [];
+
+  const totalIncome = filteredTransactions
     .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0) : 0;
+    .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalExpenses = transactions ? transactions
+  const totalExpenses = filteredTransactions
     .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0) : 0;
-
-  if (isLoading) {
-    return <div className="min-h-screen bg-white p-6">Loading...</div>;
-  }
+    .reduce((sum, t) => sum + t.amount, 0);
 
   return (
     <div className="min-h-screen bg-white p-6 pb-24">
@@ -97,38 +98,6 @@ const TransactionHistoryPage = () => {
           <h1 className="text-3xl font-bold text-[#102c54]">Transaction History</h1>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="shadow-lg border-0">
-            <CardHeader className="bg-green-600 text-white rounded-t-lg">
-              <CardTitle className="text-lg">Total Income</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-green-600">د.إ{totalIncome.toFixed(2)}</div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg border-0">
-            <CardHeader className="bg-red-600 text-white rounded-t-lg">
-              <CardTitle className="text-lg">Total Expenses</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-red-600">د.إ{totalExpenses.toFixed(2)}</div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg border-0">
-            <CardHeader className="bg-[#102c54] text-white rounded-t-lg">
-              <CardTitle className="text-lg">Net Savings</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <div className={`text-2xl font-bold ${totalIncome - totalExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                د.إ{(totalIncome - totalExpenses).toFixed(2)}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Filters */}
         <Card className="shadow-lg border-0">
           <CardHeader className="bg-[#102c54] text-white rounded-t-lg">
@@ -139,40 +108,60 @@ const TransactionHistoryPage = () => {
           </CardHeader>
           <CardContent className="p-6 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              {/* Search */}
+              <div className="col-span-1">
                 <Input
+                  type="search"
                   placeholder="Search transactions..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="border-2 focus:border-[#d8a434]"
                 />
               </div>
 
-              <Select value={filterCategory} onValueChange={setFilterCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map(category => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {/* Category Filter */}
+              <div className="col-span-1">
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="border-2 focus:border-[#d8a434]">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border-2">
+                    <SelectItem value="">All Categories</SelectItem>
+                    {allCategories?.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-              <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="income">Income</SelectItem>
-                  <SelectItem value="expense">Expense</SelectItem>
-                </SelectContent>
-              </Select>
+              {/* Date Filter */}
+              <div className="col-span-1">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal border-2 hover:border-[#d8a434]",
+                        !dateFilter && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateFilter ? format(dateFilter, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-white border-2" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateFilter}
+                      onSelect={setDateFilter}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -180,38 +169,51 @@ const TransactionHistoryPage = () => {
         {/* Transactions List */}
         <Card className="shadow-lg border-0">
           <CardHeader className="bg-[#102c54] text-white rounded-t-lg">
-            <CardTitle className="text-xl">All Transactions ({filteredTransactions.length})</CardTitle>
+            <CardTitle className="text-xl">Transactions</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            {filteredTransactions.length > 0 ? (
+            {isLoading && <div className="text-center">Loading transactions...</div>}
+            {error && <div className="text-center text-red-500">Error: {error.message}</div>}
+            {!isLoading && !error && filteredTransactions.length === 0 && (
+              <div className="text-center">No transactions found.</div>
+            )}
+            {!isLoading && !error && filteredTransactions.length > 0 && (
               <div className="space-y-4">
                 {filteredTransactions.map((transaction) => (
                   <div
                     key={transaction.id}
-                    className="flex justify-between items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="flex items-center justify-between p-4 rounded-md shadow-sm border border-gray-200"
                   >
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-800">
-                        {transaction.description || transaction.category}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        {transaction.category} • {format(new Date(transaction.date), 'PPP')}
-                      </p>
+                    <div>
+                      <div className="font-semibold">{transaction.description || 'No description'}</div>
+                      <div className="text-sm text-gray-500">
+                        {transaction.category} - {format(parseISO(transaction.date), 'PPP')}
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className={`text-xl font-bold ${
-                        transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                      }`}>
+                    <div className="flex items-center space-x-2">
+                      <Badge
+                        variant={transaction.type === 'income' ? 'outline' : 'destructive'}
+                      >
+                        {transaction.type === 'income' ? 'Income' : 'Expense'}
+                      </Badge>
+                      <span className={cn(
+                          "font-bold",
+                          transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                        )}>
                         {transaction.type === 'income' ? '+' : '-'}د.إ{transaction.amount.toFixed(2)}
-                      </p>
-                      <p className="text-sm text-gray-500 capitalize">{transaction.type}</p>
+                      </span>
                     </div>
                   </div>
                 ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-600">No transactions found matching your criteria.</p>
+                <div className="mt-4 flex justify-between font-bold">
+                  <div>
+                    <p>Total Income: <span className="text-green-600">+د.إ{totalIncome.toFixed(2)}</span></p>
+                    <p>Total Expenses: <span className="text-red-600">-د.إ{totalExpenses.toFixed(2)}</span></p>
+                  </div>
+                  <div>
+                    Net Balance: د.إ{(totalIncome - totalExpenses).toFixed(2)}
+                  </div>
+                </div>
               </div>
             )}
           </CardContent>

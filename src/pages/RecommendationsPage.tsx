@@ -1,4 +1,3 @@
-
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, TrendingDown, AlertCircle, CheckCircle, Lightbulb, Target, DollarSign, ArrowLeft, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, AlertCircle, CheckCircle, Lightbulb, Target, DollarSign, ArrowLeft } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subDays, isWithinInterval } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import FloatingAddButton from '@/components/FloatingAddButton';

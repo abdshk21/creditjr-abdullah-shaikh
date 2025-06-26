@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,26 +5,25 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { DollarSign, TrendingDown, TrendingUp, Target } from 'lucide-react';
+import { DollarSign, TrendingDown, TrendingUp, Target, Plus } from 'lucide-react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import SavingsChart from '@/components/SavingsChart';
-import CreditScoreWidget from '@/components/CreditScoreWidget';
 import FloatingAddButton from '@/components/FloatingAddButton';
 
-interface Transaction {
+interface Expense {
   id: string;
   amount: number;
   category: string;
   description: string;
   date: string;
-  type: string;
 }
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const [monthlyBudget, setMonthlyBudget] = useState(0);
 
   const currentMonthStart = startOfMonth(new Date());
   const currentMonthEnd = endOfMonth(new Date());
@@ -55,8 +53,8 @@ const Dashboard = () => {
   });
 
   // Fetch user's transactions for the current month
-  const { data: monthlyTransactions, refetch: refetchMonthlyTransactions } = useQuery({
-    queryKey: ['monthlyTransactions', user?.id, currentMonthStart, currentMonthEnd],
+  const { data: monthlyExpenses, refetch: refetchMonthlyExpenses } = useQuery({
+    queryKey: ['monthlyExpenses', user?.id, currentMonthStart, currentMonthEnd],
     queryFn: async () => {
       if (!user?.id) return [];
 
@@ -68,61 +66,33 @@ const Dashboard = () => {
         .lte('date', format(currentMonthEnd, 'yyyy-MM-dd'));
 
       if (error) {
-        console.error('Error fetching monthly transactions:', error);
+        console.error('Error fetching monthly expenses:', error);
         return [];
       }
 
-      return data as Transaction[];
-    },
-    enabled: !!user?.id,
-  });
-
-  // Fetch transactions for spending trend (last 7 days)
-  const { data: recentTransactions } = useQuery({
-    queryKey: ['recentTransactions', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('type', 'expense') // Only fetch expenses for spending chart
-        .gte('date', format(sevenDaysAgo, 'yyyy-MM-dd'))
-        .order('date', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching recent transactions:', error);
-        return [];
-      }
-
-      return data as Transaction[];
+      return data as Expense[];
     },
     enabled: !!user?.id,
   });
 
   useEffect(() => {
-    refetchMonthlyTransactions();
-  }, [user, refetchMonthlyTransactions]);
+    // Fetch the latest transactions when the component mounts or user changes
+    refetchMonthlyExpenses();
+  }, [user, refetchMonthlyExpenses]);
 
-  // Calculate totals for income and expenses
-  const income = monthlyTransactions?.filter(t => t.type === 'income') || [];
-  const expenses = monthlyTransactions?.filter(t => t.type === 'expense') || [];
-
-  const totalIncome = income.reduce((sum, t) => sum + t.amount, 0);
-  const totalExpenses = expenses.reduce((sum, t) => sum + t.amount, 0);
+  // Calculate total expenses for the current month
+  const totalSpent = monthlyExpenses
+    ? monthlyExpenses.reduce((sum, expense) => sum + expense.amount, 0)
+    : 0;
 
   // Calculate remaining budget
-  const remainingBudget = goals ? goals.income_expectation - totalExpenses : 0;
+  const remainingBudget = goals ? goals.income_expectation - totalSpent : 0;
 
   // Calculate budget progress percentage
-  const budgetProgress = goals ? (totalExpenses / goals.income_expectation) * 100 : 0;
+  const budgetProgress = goals ? (totalSpent / goals.income_expectation) * 100 : 0;
 
-  // Calculate actual savings (income - expenses)
-  const actualSavings = totalIncome - totalExpenses;
+   // Calculate actual savings (income - expenses)
+  const actualSavings = goals ? goals.income_expectation - totalSpent : 0;
 
   const chartData = [
     {
@@ -131,21 +101,6 @@ const Dashboard = () => {
       goal: goals?.monthly_saving_goal || 0
     }
   ];
-
-  // Prepare spending trend data (expenses only)
-  const spendingTrendData = recentTransactions ? (() => {
-    const dailySpending: { [date: string]: number } = {};
-    
-    recentTransactions.forEach(transaction => {
-      const date = format(new Date(transaction.date), 'MMM dd');
-      dailySpending[date] = (dailySpending[date] || 0) + transaction.amount;
-    });
-
-    return Object.entries(dailySpending).map(([date, amount]) => ({
-      date,
-      spending: amount
-    }));
-  })() : [];
 
   return (
     <div className="min-h-screen bg-white">
@@ -165,7 +120,7 @@ const Dashboard = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
         <Card className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Monthly Allowance</CardTitle>
@@ -183,7 +138,7 @@ const Dashboard = () => {
             <TrendingDown className="h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">د.إ{totalExpenses.toFixed(2)}</div>
+            <div className="text-2xl font-bold">د.إ{totalSpent.toFixed(2)}</div>
             <p className="text-sm text-gray-100">This month's expenses</p>
           </CardContent>
         </Card>
@@ -198,9 +153,6 @@ const Dashboard = () => {
             <p className="text-sm text-gray-100">Funds left to spend</p>
           </CardContent>
         </Card>
-
-        {/* Credit Score Widget */}
-        <CreditScoreWidget compact={true} showHeader={false} />
       </div>
 
       {/* Budget Overview */}
@@ -246,52 +198,21 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Monthly Spending Trend Chart - Expenses Only */}
-        <Card className="shadow-lg border-0">
-          <CardHeader className="bg-[#102c54] text-white rounded-t-lg">
-            <CardTitle className="text-xl">Monthly Spending Trend</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={spendingTrendData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip 
-                  formatter={(value: number) => [`د.إ${value.toFixed(2)}`, 'Spending']}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="spending" 
-                  stroke="#ef4444" 
-                  strokeWidth={2}
-                  dot={{ fill: '#ef4444' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-            <div className="mt-4 text-center text-sm text-gray-600">
-              Daily spending trend for the last 7 days (expenses only)
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Recent Transactions */}
         <Card className="shadow-lg border-0">
           <CardHeader className="bg-[#102c54] text-white rounded-t-lg">
             <CardTitle className="text-xl">Recent Transactions</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            {monthlyTransactions && monthlyTransactions.length > 0 ? (
+            {monthlyExpenses && monthlyExpenses.length > 0 ? (
               <div className="space-y-4">
-                {monthlyTransactions.slice(0, 5).map((transaction) => (
-                  <div key={transaction.id} className="flex justify-between items-center">
+                {monthlyExpenses.slice(0, 5).map((expense) => (
+                  <div key={expense.id} className="flex justify-between items-center">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-800">{transaction.description}</h3>
-                      <p className="text-sm text-gray-500">{transaction.category} - {format(new Date(transaction.date), 'MMM dd, yyyy')}</p>
+                      <h3 className="text-lg font-semibold text-gray-800">{expense.description}</h3>
+                      <p className="text-sm text-gray-500">{expense.category} - {format(new Date(expense.date), 'MMM dd, yyyy')}</p>
                     </div>
-                    <p className={`font-bold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                      {transaction.type === 'income' ? '+' : '-'}د.إ{transaction.amount.toFixed(2)}
-                    </p>
+                    <p className="text-red-600 font-bold">-د.إ{expense.amount.toFixed(2)}</p>
                   </div>
                 ))}
               </div>
