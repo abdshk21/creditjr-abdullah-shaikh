@@ -1,116 +1,90 @@
-
-import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, TrendingUp, TrendingDown, UtensilsCrossed, Car, BookOpen, Gamepad2, Gift, DollarSign, AlertTriangle, CheckCircle, Plus } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, CalendarIcon, Search, Filter, TrendingUp, TrendingDown, CheckCircle, AlertTriangle } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
-
-interface Transaction {
-  id: string;
-  amount: number;
-  category: string;
-  type: string;
-  description: string | null;
-  date: string;
-  affects_score: boolean;
-  created_at: string;
-}
+import FloatingAddButton from '@/components/FloatingAddButton';
 
 const TransactionHistoryPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>('all');
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
 
-  const categories = [
-    { value: 'Food', label: 'Food', icon: UtensilsCrossed },
-    { value: 'Transport', label: 'Transport', icon: Car },
-    { value: 'Education', label: 'Education', icon: BookOpen },
-    { value: 'Entertainment', label: 'Entertainment', icon: Gamepad2 },
-    { value: 'Gifts', label: 'Gifts', icon: Gift },
-    { value: 'Misc', label: 'Misc', icon: DollarSign }
-  ];
+  const { data: transactions, isLoading, error } = useQuery(
+    ['transactions', user?.id, searchTerm, categoryFilter, dateFilter],
+    async () => {
+      if (!user?.id) return [];
 
-  const getCategoryIcon = (categoryValue: string) => {
-    const category = categories.find(cat => cat.value === categoryValue);
-    return category?.icon || DollarSign;
-  };
-
-  useEffect(() => {
-    if (user?.id) {
-      fetchTransactions();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    applyFilter();
-  }, [transactions, filter]);
-
-  const fetchTransactions = async () => {
-    try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('transactions')
         .select('*')
-        .eq('user_id', user?.id)
-        .order('date', { ascending: false })
-        .order('created_at', { ascending: false });
+        .eq('user_id', user.id)
+        .order('date', { ascending: false });
+
+      if (searchTerm) {
+        query = query.ilike('description', `%${searchTerm}%`);
+      }
+
+      if (categoryFilter) {
+        query = query.eq('category', categoryFilter);
+      }
+
+      if (dateFilter) {
+        const formattedDate = format(dateFilter, 'yyyy-MM-dd');
+        query = query.eq('date', formattedDate);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching transactions:', error);
-        return;
+        throw error;
       }
 
-      setTransactions(data || []);
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-    } finally {
-      setLoading(false);
+      return data;
     }
-  };
+  );
 
-  const applyFilter = () => {
-    if (filter === 'all') {
-      setFilteredTransactions(transactions);
-    } else {
-      setFilteredTransactions(transactions.filter(transaction => transaction.type === filter));
-    }
-  };
+  const allCategories = [...new Set(transactions?.map(t => t.category).filter(Boolean))];
 
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'MMM dd, yyyy');
-  };
+  const filteredTransactions = transactions?.filter(transaction => {
+    const matchesSearch = searchTerm
+      ? transaction.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      : true;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white p-6 pb-24">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center gap-4 mb-8">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/')}
-              className="text-[#102c54] hover:bg-gray-100"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-3xl font-bold text-[#102c54]">Transaction History</h1>
-          </div>
-          <div className="text-center text-gray-500">Loading transactions...</div>
-        </div>
-      </div>
-    );
-  }
+    const matchesCategory = categoryFilter ? transaction.category === categoryFilter : true;
+
+    const matchesDate = dateFilter
+      ? format(parseISO(transaction.date), 'yyyy-MM-dd') === format(dateFilter, 'yyyy-MM-dd')
+      : true;
+
+    return matchesSearch && matchesCategory && matchesDate;
+  }) || [];
+
+  const totalIncome = filteredTransactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalExpenses = filteredTransactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
 
   return (
     <div className="min-h-screen bg-white p-6 pb-24">
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Button
@@ -124,149 +98,128 @@ const TransactionHistoryPage = () => {
           <h1 className="text-3xl font-bold text-[#102c54]">Transaction History</h1>
         </div>
 
-        {/* Filter */}
+        {/* Filters */}
         <Card className="shadow-lg border-0">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-gray-700">Filter by:</span>
-              <Select value={filter} onValueChange={setFilter}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="income">Income</SelectItem>
-                  <SelectItem value="expense">Expense</SelectItem>
-                </SelectContent>
-              </Select>
+          <CardHeader className="bg-[#102c54] text-white rounded-t-lg">
+            <CardTitle className="text-xl flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filters
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Search */}
+              <div className="col-span-1">
+                <Input
+                  type="search"
+                  placeholder="Search transactions..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="border-2 focus:border-[#d8a434]"
+                />
+              </div>
+
+              {/* Category Filter */}
+              <div className="col-span-1">
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="border-2 focus:border-[#d8a434]">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border-2">
+                    <SelectItem value="">All Categories</SelectItem>
+                    {allCategories?.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Date Filter */}
+              <div className="col-span-1">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal border-2 hover:border-[#d8a434]",
+                        !dateFilter && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateFilter ? format(dateFilter, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-white border-2" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateFilter}
+                      onSelect={setDateFilter}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Transaction List */}
-        <div className="space-y-4">
-          {filteredTransactions.length === 0 ? (
-            <Card className="shadow-lg border-0">
-              <CardContent className="p-8 text-center">
-                <div className="text-gray-500 text-lg">
-                  {filter === 'all' ? 'No transactions found' : `No ${filter} transactions found`}
-                </div>
-                <div className="text-gray-400 text-sm mt-2">
-                  {filter === 'all' ? 'Start by adding your first transaction!' : `Try a different filter or add some ${filter} transactions.`}
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredTransactions.map((transaction) => {
-              const CategoryIcon = getCategoryIcon(transaction.category);
-              const isIncome = transaction.type === 'income';
-              const hasNegativeScoreImpact = transaction.type === 'expense' && transaction.affects_score;
-              
-              return (
-                <Card key={transaction.id} className="shadow-lg border-0 hover:shadow-xl transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      {/* Left side - Icon, Category, Date, Description */}
-                      <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-full ${
-                          isIncome ? 'bg-green-100' : 'bg-red-100'
-                        }`}>
-                          <CategoryIcon className={`h-6 w-6 ${
-                            isIncome ? 'text-green-600' : 'text-red-600'
-                          }`} />
-                        </div>
-                        
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-1">
-                            <span className="font-semibold text-lg text-[#102c54]">
-                              {transaction.category}
-                            </span>
-                            <Badge 
-                              variant={isIncome ? "default" : "destructive"}
-                              className={`text-xs font-medium ${
-                                isIncome 
-                                  ? 'bg-green-100 text-green-700 hover:bg-green-100' 
-                                  : 'bg-red-100 text-red-700 hover:bg-red-100'
-                              }`}
-                            >
-                              {isIncome ? (
-                                <><TrendingUp className="h-3 w-3 mr-1" /> Income</>
-                              ) : (
-                                <><TrendingDown className="h-3 w-3 mr-1" /> Expense</>
-                              )}
-                            </Badge>
-                          </div>
-                          
-                          <div className="text-sm text-gray-500 mb-1">
-                            {formatDate(transaction.date)}
-                          </div>
-                          
-                          {transaction.description && (
-                            <div className="text-sm text-gray-600 italic">
-                              "{transaction.description}"
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Right side - Amount and Score Impact */}
-                      <div className="text-right">
-                        <div className={`text-2xl font-bold mb-2 ${
-                          isIncome ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {isIncome ? '+' : '-'}د.إ {Math.abs(transaction.amount).toFixed(2)}
-                        </div>
-                        
-                        <div className="flex items-center justify-end gap-1">
-                          {hasNegativeScoreImpact ? (
-                            <>
-                              <AlertTriangle className="h-4 w-4 text-orange-500" />
-                              <span className="text-xs text-orange-500 font-medium">Affects Score</span>
-                            </>
-                          ) : isIncome ? (
-                            <>
-                              <CheckCircle className="h-4 w-4 text-green-500" />
-                              <span className="text-xs text-green-500 font-medium">Positive Impact</span>
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="h-4 w-4 text-gray-400" />
-                              <span className="text-xs text-gray-400 font-medium">No Score Impact</span>
-                            </>
-                          )}
-                        </div>
+        {/* Transactions List */}
+        <Card className="shadow-lg border-0">
+          <CardHeader className="bg-[#102c54] text-white rounded-t-lg">
+            <CardTitle className="text-xl">Transactions</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {isLoading && <div className="text-center">Loading transactions...</div>}
+            {error && <div className="text-center text-red-500">Error: {error.message}</div>}
+            {!isLoading && !error && filteredTransactions.length === 0 && (
+              <div className="text-center">No transactions found.</div>
+            )}
+            {!isLoading && !error && filteredTransactions.length > 0 && (
+              <div className="space-y-4">
+                {filteredTransactions.map((transaction) => (
+                  <div
+                    key={transaction.id}
+                    className="flex items-center justify-between p-4 rounded-md shadow-sm border border-gray-200"
+                  >
+                    <div>
+                      <div className="font-semibold">{transaction.description || 'No description'}</div>
+                      <div className="text-sm text-gray-500">
+                        {transaction.category} - {format(parseISO(transaction.date), 'PPP')}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })
-          )}
-        </div>
-
-        {/* Summary */}
-        {filteredTransactions.length > 0 && (
-          <Card className="shadow-lg border-0 bg-gray-50">
-            <CardContent className="p-6">
-              <div className="text-center">
-                <div className="text-sm text-gray-600 mb-2">
-                  {filter === 'all' ? 'Total Transactions' : `Total ${filter.charAt(0).toUpperCase() + filter.slice(1)} Transactions`}
+                    <div className="flex items-center space-x-2">
+                      <Badge
+                        variant={transaction.type === 'income' ? 'outline' : 'destructive'}
+                      >
+                        {transaction.type === 'income' ? 'Income' : 'Expense'}
+                      </Badge>
+                      <span className={cn(
+                          "font-bold",
+                          transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                        )}>
+                        {transaction.type === 'income' ? '+' : '-'}د.إ{transaction.amount.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                <div className="mt-4 flex justify-between font-bold">
+                  <div>
+                    <p>Total Income: <span className="text-green-600">+د.إ{totalIncome.toFixed(2)}</span></p>
+                    <p>Total Expenses: <span className="text-red-600">-د.إ{totalExpenses.toFixed(2)}</span></p>
+                  </div>
+                  <div>
+                    Net Balance: د.إ{(totalIncome - totalExpenses).toFixed(2)}
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-[#102c54]">{filteredTransactions.length}</div>
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Floating Add Button */}
-        <Button
-          onClick={() => navigate('/add-transaction')}
-          className="fixed bottom-20 right-6 w-14 h-14 rounded-full bg-[#d8a434] hover:bg-[#d8a434]/90 text-white shadow-lg hover:shadow-xl transition-all duration-300 z-50"
-          size="icon"
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
+            )}
+          </CardContent>
+        </Card>
       </div>
+      <FloatingAddButton />
     </div>
   );
 };

@@ -9,7 +9,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
-import { CalendarIcon, ArrowLeft, UtensilsCrossed, Car, BookOpen, Gamepad2, Gift, DollarSign } from 'lucide-react';
+import { CalendarIcon, ArrowLeft, UtensilsCrossed, Car, BookOpen, Gamepad2, Gift, DollarSign, Wallet, Briefcase, Award, ShoppingBag, Coins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -29,7 +29,7 @@ const AddTransactionPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  const categories = [
+  const expenseCategories = [
     { value: 'Food', label: 'Food', icon: UtensilsCrossed },
     { value: 'Transport', label: 'Transport', icon: Car },
     { value: 'Education', label: 'Education', icon: BookOpen },
@@ -37,6 +37,24 @@ const AddTransactionPage = () => {
     { value: 'Gifts', label: 'Gifts', icon: Gift },
     { value: 'Misc', label: 'Misc', icon: DollarSign }
   ];
+
+  const incomeCategories = [
+    { value: 'Pocket Money', label: 'Pocket Money', icon: Wallet },
+    { value: 'Gift', label: 'Gift', icon: Gift },
+    { value: 'Freelance', label: 'Freelance', icon: Briefcase },
+    { value: 'Allowance', label: 'Allowance', icon: DollarSign },
+    { value: 'Bonus', label: 'Bonus', icon: Award },
+    { value: 'Sale', label: 'Sale', icon: ShoppingBag },
+    { value: 'Other Income', label: 'Other Income', icon: Coins }
+  ];
+
+  const currentCategories = type === 'income' ? incomeCategories : expenseCategories;
+
+  // Reset category when type changes
+  const handleTypeChange = (newType: 'income' | 'expense') => {
+    setType(newType);
+    setCategory(''); // Reset category selection
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,7 +146,7 @@ const AddTransactionPage = () => {
                   <Button
                     type="button"
                     variant={type === 'expense' ? 'default' : 'outline'}
-                    onClick={() => setType('expense')}
+                    onClick={() => handleTypeChange('expense')}
                     className={cn(
                       "flex-1 py-3 text-base font-semibold",
                       type === 'expense' 
@@ -141,7 +159,7 @@ const AddTransactionPage = () => {
                   <Button
                     type="button"
                     variant={type === 'income' ? 'default' : 'outline'}
-                    onClick={() => setType('income')}
+                    onClick={() => handleTypeChange('income')}
                     className={cn(
                       "flex-1 py-3 text-base font-semibold",
                       type === 'income' 
@@ -181,7 +199,7 @@ const AddTransactionPage = () => {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent className="bg-white border-2">
-                    {categories.map((cat) => {
+                    {currentCategories.map((cat) => {
                       const Icon = cat.icon;
                       return (
                         <SelectItem key={cat.value} value={cat.value}>

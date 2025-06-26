@@ -1,15 +1,15 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Target, TrendingUp, User, LogOut } from 'lucide-react';
+import { ArrowLeft, Target, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
+import FloatingAddButton from '@/components/FloatingAddButton';
 
 const SetGoalPage = () => {
   const navigate = useNavigate();
@@ -105,10 +105,6 @@ const SetGoalPage = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleLogout = () => {
-    // Implement logout logic here
   };
 
   return (
@@ -213,6 +209,7 @@ const SetGoalPage = () => {
           </CardContent>
         </Card>
       </div>
+      <FloatingAddButton />
     </div>
   );
 };
