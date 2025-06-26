@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import Confetti from '@/components/Confetti';
+import FloatingAddButton from '@/components/FloatingAddButton';
 
 interface Transaction {
   id: string;
@@ -341,7 +341,7 @@ const MyScorePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 pb-24">
+    <div className="min-h-screen bg-white p-6 pb-24">
       {/* Confetti Component */}
       <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
       
@@ -506,6 +506,9 @@ const MyScorePage = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Floating Add Button */}
+      <FloatingAddButton />
     </div>
   );
 };

@@ -9,6 +9,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Confetti from '@/components/Confetti';
+import SavingsChart from '@/components/SavingsChart';
+import FloatingAddButton from '@/components/FloatingAddButton';
 
 interface Transaction {
   id: string;
@@ -332,7 +334,7 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Enhanced Savings Goal Progress */}
+        {/* Enhanced Savings Goal Progress with new chart */}
         <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
           <CardHeader>
             <CardTitle className="text-[#102c54] flex items-center gap-2">
@@ -350,21 +352,18 @@ const Dashboard = () => {
               <p className="text-sm text-muted-foreground">
                 {actualSavings >= savingsGoal 
                   ? "🎉 Congratulations! You've reached your savings goal!"
-                  : `You need د.إ${(savingsGoal - actualSavings).toFixed(2)} more to reach your goal.`
+                  : actualSavings >= 0
+                  ? `You need د.إ${(savingsGoal - actualSavings).toFixed(2)} more to reach your goal.`
+                  : `You're د.إ${Math.abs(actualSavings).toFixed(2)} in the red this month.`
                 }
               </p>
+              <SavingsChart actualSavings={actualSavings} savingsGoal={savingsGoal} />
             </div>
           </CardContent>
         </Card>
 
         {/* Floating Add Button */}
-        <Button
-          onClick={() => navigate('/add-transaction')}
-          className="fixed bottom-20 right-6 w-14 h-14 rounded-full bg-[#d8a434] hover:bg-[#d8a434]/90 text-white shadow-lg hover:shadow-xl transition-all duration-300 z-50"
-          size="icon"
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
+        <FloatingAddButton />
       </div>
     </div>
   );

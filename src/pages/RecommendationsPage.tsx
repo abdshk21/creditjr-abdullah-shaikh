@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lightbulb, ArrowLeft, TrendingUp, Target, Calendar, Award, User, LogOut } from 'lucide-react';
@@ -8,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import LovableClaudeChat from '@/components/LovableClaudeChat';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis } from 'recharts';
+import FloatingAddButton from '@/components/FloatingAddButton';
 
 interface Transaction {
   id: string;
@@ -313,7 +313,7 @@ const RecommendationsPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 pb-24">
+    <div className="min-h-screen bg-white p-6 pb-24">
       <div className="max-w-7xl mx-auto">
         {/* Enhanced Header with Gradient Background */}
         <div className="bg-gradient-to-r from-[#102c54] via-[#1e3a72] to-[#2d4f8a] rounded-lg p-6 shadow-lg mb-8">
@@ -487,6 +487,9 @@ const RecommendationsPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Floating Add Button */}
+      <FloatingAddButton />
     </div>
   );
 };

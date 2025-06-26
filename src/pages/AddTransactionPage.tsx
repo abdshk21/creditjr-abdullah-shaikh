@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,7 +28,7 @@ const AddTransactionPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  const categories = [
+  const expenseCategories = [
     { value: 'Food', label: 'Food', icon: UtensilsCrossed },
     { value: 'Transport', label: 'Transport', icon: Car },
     { value: 'Education', label: 'Education', icon: BookOpen },
@@ -37,6 +36,18 @@ const AddTransactionPage = () => {
     { value: 'Gifts', label: 'Gifts', icon: Gift },
     { value: 'Misc', label: 'Misc', icon: DollarSign }
   ];
+
+  const incomeCategories = [
+    { value: 'Pocket Money', label: 'Pocket Money', icon: DollarSign },
+    { value: 'Gift', label: 'Gift', icon: Gift },
+    { value: 'Freelance', label: 'Freelance', icon: DollarSign },
+    { value: 'Allowance', label: 'Allowance', icon: DollarSign },
+    { value: 'Bonus', label: 'Bonus', icon: DollarSign },
+    { value: 'Sale', label: 'Sale', icon: DollarSign },
+    { value: 'Other Income', label: 'Other Income', icon: DollarSign }
+  ];
+
+  const categories = type === 'income' ? incomeCategories : expenseCategories;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,7 +139,10 @@ const AddTransactionPage = () => {
                   <Button
                     type="button"
                     variant={type === 'expense' ? 'default' : 'outline'}
-                    onClick={() => setType('expense')}
+                    onClick={() => {
+                      setType('expense');
+                      setCategory(''); // Reset category when type changes
+                    }}
                     className={cn(
                       "flex-1 py-3 text-base font-semibold",
                       type === 'expense' 
@@ -141,7 +155,10 @@ const AddTransactionPage = () => {
                   <Button
                     type="button"
                     variant={type === 'income' ? 'default' : 'outline'}
-                    onClick={() => setType('income')}
+                    onClick={() => {
+                      setType('income');
+                      setCategory(''); // Reset category when type changes
+                    }}
                     className={cn(
                       "flex-1 py-3 text-base font-semibold",
                       type === 'income' 

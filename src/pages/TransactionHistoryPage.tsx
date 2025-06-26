@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import FloatingAddButton from '@/components/FloatingAddButton';
 
 interface Transaction {
   id: string;
@@ -259,13 +259,7 @@ const TransactionHistoryPage = () => {
         )}
 
         {/* Floating Add Button */}
-        <Button
-          onClick={() => navigate('/add-transaction')}
-          className="fixed bottom-20 right-6 w-14 h-14 rounded-full bg-[#d8a434] hover:bg-[#d8a434]/90 text-white shadow-lg hover:shadow-xl transition-all duration-300 z-50"
-          size="icon"
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
+        <FloatingAddButton />
       </div>
     </div>
   );

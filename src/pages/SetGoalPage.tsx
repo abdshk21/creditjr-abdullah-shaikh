@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
+import FloatingAddButton from '@/components/FloatingAddButton';
 
 const SetGoalPage = () => {
   const navigate = useNavigate();
@@ -213,6 +213,9 @@ const SetGoalPage = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Floating Add Button */}
+      <FloatingAddButton />
     </div>
   );
 };
