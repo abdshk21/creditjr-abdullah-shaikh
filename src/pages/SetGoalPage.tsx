@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Target, TrendingUp, User, LogOut, Plus } from 'lucide-react';
+import { ArrowLeft, Target, TrendingUp, User, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -112,15 +113,6 @@ const SetGoalPage = () => {
 
   return (
     <div className="min-h-screen bg-white p-6 pb-24">
-      {/* Floating Add Transaction Button */}
-      <Button
-        onClick={() => navigate('/add-transaction')}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#d8a434] hover:bg-[#d8a434]/90 text-white shadow-lg z-50"
-        size="icon"
-      >
-        <Plus className="h-6 w-6" />
-      </Button>
-
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
