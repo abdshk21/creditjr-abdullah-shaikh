@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import Confetti from '@/components/Confetti';
 
 interface Transaction {
   id: string;
@@ -97,6 +98,10 @@ const MyScorePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isRecalculating, setIsRecalculating] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [scoreChangeMessage, setScoreChangeMessage] = useState('');
+  const [showWarning, setShowWarning] = useState(false);
+  const [previousScore, setPreviousScore] = useState<number | null>(null);
 
   // Fetch transactions
   const { data: transactions = [], refetch: refetchTransactions } = useQuery({
@@ -174,6 +179,13 @@ const MyScorePage = () => {
     },
     enabled: !!user?.id,
   });
+
+  // Store the current score as previous when component mounts
+  useEffect(() => {
+    if (creditScore?.score && previousScore === null) {
+      setPreviousScore(creditScore.score);
+    }
+  }, [creditScore?.score, previousScore]);
 
   // Logout function
   const handleLogout = async () => {
@@ -262,11 +274,12 @@ const MyScorePage = () => {
 
   const breakdown = getBreakdown();
 
-  // Handle recalculate
+  // Handle recalculate with score change feedback
   const handleRecalculate = async () => {
     if (!user?.id) return;
     
     setIsRecalculating(true);
+    const oldScore = creditScore?.score || calculatedScore.score;
     
     try {
       const newScore = calculateCreditScore();
@@ -283,6 +296,20 @@ const MyScorePage = () => {
       
       if (error) {
         console.error('Error updating credit score:', error);
+      }
+      
+      // Show feedback based on score change
+      if (newScore.score > oldScore) {
+        setShowConfetti(true);
+        setScoreChangeMessage("Score Up! Keep those habits going 🎉");
+        setTimeout(() => setScoreChangeMessage(''), 5000);
+      } else if (newScore.score < oldScore) {
+        setShowWarning(true);
+        setScoreChangeMessage("Your score dropped — check your spending or missed goals 🛑");
+        setTimeout(() => {
+          setShowWarning(false);
+          setScoreChangeMessage('');
+        }, 6000);
       }
       
       // Refetch credit score
@@ -303,6 +330,20 @@ const MyScorePage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 pb-24">
+      {/* Confetti Component */}
+      <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
+      
+      {/* Score Change Messages */}
+      {scoreChangeMessage && (
+        <div className={`fixed top-20 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-40 animate-fade-in ${
+          showWarning 
+            ? 'bg-red-500 text-white' 
+            : 'bg-green-500 text-white'
+        }`}>
+          {scoreChangeMessage}
+        </div>
+      )}
+
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Enhanced Header with Gradient Background */}
         <div className="bg-gradient-to-r from-[#102c54] via-[#1e3a72] to-[#2d4f8a] rounded-lg p-6 shadow-lg">
@@ -360,7 +401,7 @@ const MyScorePage = () => {
 
         <h2 className="text-3xl font-bold text-[#102c54]">Your Virtual Credit Score</h2>
 
-        {/* Enhanced Score Display with Semi-Circle Gauge */}
+        {/* Enhanced Score Display with Repositioned Button */}
         <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
           <CardHeader className="bg-gradient-to-r from-[#d8a434] to-[#f4c430] text-white rounded-t-lg">
             <CardTitle className="text-2xl flex items-center gap-3">
@@ -370,7 +411,26 @@ const MyScorePage = () => {
           </CardHeader>
           <CardContent className="p-8 text-center">
             <div className="space-y-6">
-              <SemiCircleGauge score={currentScore} size={320} />
+              <div className="flex items-center justify-center gap-8">
+                <SemiCircleGauge score={currentScore} size={320} />
+                <Button
+                  onClick={handleRecalculate}
+                  disabled={isRecalculating}
+                  className="bg-gradient-to-r from-[#d8a434] to-[#f4c430] hover:from-[#e6b345] hover:to-[#f8d147] text-white px-6 py-3 text-lg font-semibold h-fit"
+                >
+                  {isRecalculating ? (
+                    <>
+                      <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                      Recalculating...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-5 w-5 mr-2" />
+                      Recalculate Now
+                    </>
+                  )}
+                </Button>
+              </div>
               {creditScore?.last_calculated && (
                 <div className="text-sm text-gray-500">
                   Last updated: {format(new Date(creditScore.last_calculated), 'MMM dd, yyyy at h:mm a')}
@@ -427,32 +487,6 @@ const MyScorePage = () => {
                 ))}
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Enhanced Recalculate Button */}
-        <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
-          <CardContent className="p-6 text-center">
-            <Button
-              onClick={handleRecalculate}
-              disabled={isRecalculating}
-              className="bg-gradient-to-r from-[#d8a434] to-[#f4c430] hover:from-[#e6b345] hover:to-[#f8d147] text-white px-10 py-4 text-lg font-semibold"
-            >
-              {isRecalculating ? (
-                <>
-                  <RefreshCw className="h-6 w-6 mr-3 animate-spin" />
-                  Recalculating...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-6 w-6 mr-3" />
-                  Recalculate Now
-                </>
-              )}
-            </Button>
-            <p className="text-gray-500 mt-3">
-              Updates your score based on latest transactions and goals
-            </p>
           </CardContent>
         </Card>
       </div>

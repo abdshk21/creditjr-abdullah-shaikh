@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lightbulb, ArrowLeft, TrendingUp, Target, Calendar, Award, User, LogOut } from 'lucide-react';
@@ -5,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import FinanceCoachChat from '@/components/FinanceCoachChat';
+import ClaudeFinanceCoach from '@/components/ClaudeFinanceCoach';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis } from 'recharts';
 
 interface Transaction {
@@ -299,7 +300,7 @@ const RecommendationsPage = () => {
 
   const feedback = generateCoachFeedback();
 
-  // Prepare chart data
+  // Prepare chart data with د.إ currency
   const categoryChartData = Object.entries(analysis.categoryBreakdown).map(([category, amount]) => ({
     name: category,
     value: amount,
@@ -440,7 +441,7 @@ const RecommendationsPage = () => {
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, '']} />
+                        <Tooltip formatter={(value) => [`د.إ${Number(value).toFixed(2)}`, '']} />
                         <Legend />
                       </PieChart>
                     </ResponsiveContainer>
@@ -462,15 +463,15 @@ const RecommendationsPage = () => {
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between text-lg font-medium">
-                    <span>Savings Goal: ${analysis.savingsGoal.toFixed(2)}</span>
-                    <span>Actual Savings: ${analysis.actualSavings.toFixed(2)}</span>
+                    <span>Savings Goal: د.إ{analysis.savingsGoal.toFixed(2)}</span>
+                    <span>Actual Savings: د.إ{analysis.actualSavings.toFixed(2)}</span>
                   </div>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={savingsChartData}>
                         <XAxis dataKey="name" />
                         <YAxis />
-                        <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, '']} />
+                        <Tooltip formatter={(value) => [`د.إ${Number(value).toFixed(2)}`, '']} />
                         <Bar dataKey="value" fill="#22c55e" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
@@ -482,7 +483,7 @@ const RecommendationsPage = () => {
 
           {/* Right Side: Chat Interface (30%) */}
           <div className="lg:col-span-3">
-            <FinanceCoachChat />
+            <ClaudeFinanceCoach />
           </div>
         </div>
       </div>
