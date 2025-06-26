@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -256,26 +257,9 @@ const MyScorePage = () => {
 
         <h2 className="text-3xl font-bold text-[#102c54]">Your Virtual Credit Score</h2>
 
-        {/* Enhanced Score Display with Repositioned Button */}
-        <div className="flex items-center justify-center gap-8">
+        {/* Enhanced Score Display */}
+        <div className="flex justify-center">
           <CreditScoreWidget size="large" showTitle={true} />
-          <Button
-            onClick={handleRecalculate}
-            disabled={isRecalculating}
-            className="bg-gradient-to-r from-[#d8a434] to-[#f4c430] hover:from-[#e6b345] hover:to-[#f8d147] text-white px-6 py-3 text-lg font-semibold h-fit"
-          >
-            {isRecalculating ? (
-              <>
-                <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-                Recalculating...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="h-5 w-5 mr-2" />
-                Recalculate Now
-              </>
-            )}
-          </Button>
         </div>
         
         {creditScore?.last_calculated && (
@@ -338,6 +322,27 @@ const MyScorePage = () => {
 
           {/* Score Breakdown Panel */}
           <ScoreBreakdown />
+        </div>
+
+        {/* Recalculate Button Below Both Sections */}
+        <div className="flex justify-center">
+          <Button
+            onClick={handleRecalculate}
+            disabled={isRecalculating}
+            className="bg-gradient-to-r from-[#d8a434] to-[#f4c430] hover:from-[#e6b345] hover:to-[#f8d147] text-white px-8 py-4 text-lg font-semibold"
+          >
+            {isRecalculating ? (
+              <>
+                <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                Recalculating...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-5 w-5 mr-2" />
+                Recalculate Now
+              </>
+            )}
+          </Button>
         </div>
       </div>
       
