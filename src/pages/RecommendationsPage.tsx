@@ -312,75 +312,86 @@ const RecommendationsPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white p-6 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 pb-24">
       <div className="max-w-7xl mx-auto">
-        {/* Header with branding and account */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/')}
-              className="text-[#102c54] hover:bg-gray-100"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex items-center gap-3">
-              <img 
-                src="/lovable-uploads/ce9c86db-4914-4c0d-8753-b431569de422.png" 
-                alt="Tyche Online Academy" 
-                className="w-10 h-10 rounded-full"
-              />
-              <div>
-                <h1 className="text-2xl font-bold text-[#102c54]">CreditJr</h1>
-                <p className="text-sm text-gray-600">By Tyche Online Academy</p>
+        {/* Enhanced Header with Gradient Background */}
+        <div className="bg-gradient-to-r from-[#102c54] via-[#1e3a72] to-[#2d4f8a] rounded-lg p-6 shadow-lg mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/')}
+                className="text-white hover:bg-white/10 w-12 h-12 rounded-full"
+              >
+                <ArrowLeft className="h-6 w-6" />
+              </Button>
+              <div className="flex items-center gap-3">
+                <img 
+                  src="/lovable-uploads/ce9c86db-4914-4c0d-8753-b431569de422.png" 
+                  alt="Tyche Online Academy" 
+                  className="w-12 h-12 rounded-full border-2 border-white/20"
+                />
+                <div>
+                  <h1 className="text-3xl font-bold text-white">CreditJr</h1>
+                  <p className="text-white/80">By Tyche Online Academy</p>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/my-account')}
-              className="text-[#102c54] hover:bg-gray-100"
-            >
-              <User className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-[#102c54] hover:bg-gray-100"
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-3">
+              {user?.user_metadata?.avatar_url ? (
+                <img 
+                  src={user.user_metadata.avatar_url} 
+                  alt="Profile" 
+                  className="w-10 h-10 rounded-full border-2 border-white/20 cursor-pointer hover:border-white/40 transition-all"
+                  onClick={() => navigate('/my-account')}
+                />
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/my-account')}
+                  className="text-white hover:bg-white/10 w-10 h-10 rounded-full"
+                >
+                  <User className="h-5 w-5" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-white hover:bg-white/10 w-10 h-10 rounded-full"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
 
-        <h2 className="text-2xl font-bold text-[#102c54] mb-6">Your AI Finance Coach</h2>
+        <h2 className="text-3xl font-bold text-[#102c54] mb-6">Your AI Finance Coach</h2>
 
         {/* Split Layout: Left 70% Overview, Right 30% Chat */}
         <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
           {/* Left Side: Overview Panel (70%) */}
           <div className="lg:col-span-7 space-y-6">
             {/* 1. Credit Score */}
-            <Card className="shadow-lg border-0 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
-              <CardHeader className="bg-[#d8a434] text-white rounded-t-lg">
-                <CardTitle className="text-xl flex items-center gap-3">
-                  <Award className="h-6 w-6" />
+            <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
+              <CardHeader className="bg-gradient-to-r from-[#d8a434] to-[#f4c430] text-white rounded-t-lg">
+                <CardTitle className="text-2xl flex items-center gap-3">
+                  <Award className="h-7 w-7" />
                   Current Credit Score
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6 text-center">
-                <SemiCircleGauge score={feedback.newScore} size={240} />
+              <CardContent className="p-8 text-center">
+                <SemiCircleGauge score={feedback.newScore} size={280} />
               </CardContent>
             </Card>
 
             {/* 2. How You're Doing Overall */}
-            <Card className="shadow-lg border-0 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
+            <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
               <CardHeader>
-                <CardTitle className="text-[#102c54] flex items-center gap-2">
-                  <Lightbulb className="h-5 w-5" />
+                <CardTitle className="text-[#102c54] flex items-center gap-2 text-xl">
+                  <Lightbulb className="h-6 w-6" />
                   How You're Doing Overall
                 </CardTitle>
               </CardHeader>
@@ -390,39 +401,39 @@ const RecommendationsPage = () => {
             </Card>
 
             {/* 3. This Week's Focus */}
-            <Card className="shadow-lg border-0 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
+            <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
               <CardHeader>
-                <CardTitle className="text-[#102c54] flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
+                <CardTitle className="text-[#102c54] flex items-center gap-2 text-xl">
+                  <Calendar className="h-6 w-6" />
                   This Week's Focus
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-green-800 mb-2">💡 Your Action Item:</h4>
-                  <p className="text-green-700">{feedback.improvement}</p>
+                <div className="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-lg">
+                  <h4 className="font-semibold text-green-800 mb-3 text-lg">💡 Your Action Item:</h4>
+                  <p className="text-green-700 text-base">{feedback.improvement}</p>
                 </div>
               </CardContent>
             </Card>
 
             {/* 4. Spending Breakdown */}
-            <Card className="shadow-lg border-0 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
+            <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
               <CardHeader>
-                <CardTitle className="text-[#102c54] flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
+                <CardTitle className="text-[#102c54] flex items-center gap-2 text-xl">
+                  <TrendingUp className="h-6 w-6" />
                   Spending Breakdown
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {categoryChartData.length > 0 ? (
-                  <div className="h-64">
+                  <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
                           data={categoryChartData}
                           cx="50%"
                           cy="50%"
-                          outerRadius={80}
+                          outerRadius={100}
                           dataKey="value"
                         >
                           {categoryChartData.map((entry, index) => (
@@ -441,26 +452,26 @@ const RecommendationsPage = () => {
             </Card>
 
             {/* 5. Savings Breakdown */}
-            <Card className="shadow-lg border-0 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
+            <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
               <CardHeader>
-                <CardTitle className="text-[#102c54] flex items-center gap-2">
-                  <Target className="h-5 w-5" />
+                <CardTitle className="text-[#102c54] flex items-center gap-2 text-xl">
+                  <Target className="h-6 w-6" />
                   Savings Progress
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-lg font-medium">
                     <span>Savings Goal: ${analysis.savingsGoal.toFixed(2)}</span>
                     <span>Actual Savings: ${analysis.actualSavings.toFixed(2)}</span>
                   </div>
-                  <div className="h-48">
+                  <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={savingsChartData}>
                         <XAxis dataKey="name" />
                         <YAxis />
                         <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, '']} />
-                        <Bar dataKey="value" fill="#22c55e" />
+                        <Bar dataKey="value" fill="#22c55e" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>

@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -186,25 +185,19 @@ Guidelines:
 - Provide practical, actionable advice
 - Maintain a big-sibling, mentor vibe`;
 
-      const response = await fetch('/api/chat-with-coach', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('chat-with-coach', {
+        body: {
           messages: [
             { role: 'system', content: systemPrompt },
             ...conversationHistory,
             { role: 'user', content: input.trim() }
           ]
-        }),
+        }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get response from coach');
+      if (error) {
+        throw new Error(error.message || 'Failed to get response from coach');
       }
-
-      const data = await response.json();
       
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -236,8 +229,8 @@ Guidelines:
   };
 
   return (
-    <Card className="shadow-lg border-0 h-[600px] flex flex-col">
-      <CardHeader className="bg-[#d8a434] text-white rounded-t-lg">
+    <Card className="shadow-lg border-0 h-[600px] flex flex-col hover:shadow-2xl transition-all duration-300">
+      <CardHeader className="bg-gradient-to-r from-[#d8a434] to-[#f4c430] text-white rounded-t-lg">
         <CardTitle className="text-xl flex items-center gap-3">
           <MessageCircle className="h-6 w-6" />
           Talk to Your Finance Coach
@@ -252,15 +245,15 @@ Guidelines:
               className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {message.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-full bg-[#d8a434] flex items-center justify-center flex-shrink-0 mt-1">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#d8a434] to-[#f4c430] flex items-center justify-center flex-shrink-0 mt-1">
                   <Bot className="h-4 w-4 text-white" />
                 </div>
               )}
               <div
                 className={`max-w-[80%] p-3 rounded-lg ${
                   message.role === 'user'
-                    ? 'bg-[#102c54] text-white'
-                    : 'bg-gray-100 text-gray-800'
+                    ? 'bg-gradient-to-r from-[#102c54] to-[#1e3a72] text-white'
+                    : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800'
                 }`}
               >
                 <p className="text-sm">{message.content}</p>
@@ -272,7 +265,7 @@ Guidelines:
                 </p>
               </div>
               {message.role === 'user' && (
-                <div className="w-8 h-8 rounded-full bg-[#102c54] flex items-center justify-center flex-shrink-0 mt-1">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#102c54] to-[#1e3a72] flex items-center justify-center flex-shrink-0 mt-1">
                   <User className="h-4 w-4 text-white" />
                 </div>
               )}
@@ -280,10 +273,10 @@ Guidelines:
           ))}
           {isLoading && (
             <div className="flex gap-3 justify-start">
-              <div className="w-8 h-8 rounded-full bg-[#d8a434] flex items-center justify-center flex-shrink-0 mt-1">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#d8a434] to-[#f4c430] flex items-center justify-center flex-shrink-0 mt-1">
                 <Bot className="h-4 w-4 text-white" />
               </div>
-              <div className="bg-gray-100 text-gray-800 p-3 rounded-lg">
+              <div className="bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 p-3 rounded-lg">
                 <p className="text-sm">Thinking... 🤔</p>
               </div>
             </div>
@@ -292,20 +285,20 @@ Guidelines:
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t bg-gray-50">
+        <div className="p-4 border-t bg-gradient-to-r from-gray-50 to-gray-100">
           <div className="flex gap-2">
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Ask me anything about your finances..."
-              className="flex-1 min-h-[40px] max-h-[100px] resize-none"
+              className="flex-1 min-h-[40px] max-h-[100px] resize-none border-2 focus:border-[#d8a434]"
               disabled={isLoading}
             />
             <Button
               onClick={sendMessage}
               disabled={!input.trim() || isLoading}
-              className="bg-[#d8a434] hover:bg-[#d8a434]/90 text-white self-end"
+              className="bg-gradient-to-r from-[#d8a434] to-[#f4c430] hover:from-[#e6b345] hover:to-[#f8d147] text-white self-end"
             >
               <Send className="h-4 w-4" />
             </Button>

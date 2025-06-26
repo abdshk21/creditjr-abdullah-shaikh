@@ -302,64 +302,75 @@ const MyScorePage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white p-6 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 pb-24">
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* Header with branding and account */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/')}
-              className="text-[#102c54] hover:bg-gray-100"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex items-center gap-3">
-              <img 
-                src="/lovable-uploads/ce9c86db-4914-4c0d-8753-b431569de422.png" 
-                alt="Tyche Online Academy" 
-                className="w-10 h-10 rounded-full"
-              />
-              <div>
-                <h1 className="text-2xl font-bold text-[#102c54]">CreditJr</h1>
-                <p className="text-sm text-gray-600">By Tyche Online Academy</p>
+        {/* Enhanced Header with Gradient Background */}
+        <div className="bg-gradient-to-r from-[#102c54] via-[#1e3a72] to-[#2d4f8a] rounded-lg p-6 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/')}
+                className="text-white hover:bg-white/10 w-12 h-12 rounded-full"
+              >
+                <ArrowLeft className="h-6 w-6" />
+              </Button>
+              <div className="flex items-center gap-3">
+                <img 
+                  src="/lovable-uploads/ce9c86db-4914-4c0d-8753-b431569de422.png" 
+                  alt="Tyche Online Academy" 
+                  className="w-12 h-12 rounded-full border-2 border-white/20"
+                />
+                <div>
+                  <h1 className="text-3xl font-bold text-white">CreditJr</h1>
+                  <p className="text-white/80">By Tyche Online Academy</p>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/my-account')}
-              className="text-[#102c54] hover:bg-gray-100"
-            >
-              <User className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-[#102c54] hover:bg-gray-100"
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-3">
+              {user?.user_metadata?.avatar_url ? (
+                <img 
+                  src={user.user_metadata.avatar_url} 
+                  alt="Profile" 
+                  className="w-10 h-10 rounded-full border-2 border-white/20 cursor-pointer hover:border-white/40 transition-all"
+                  onClick={() => navigate('/my-account')}
+                />
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/my-account')}
+                  className="text-white hover:bg-white/10 w-10 h-10 rounded-full"
+                >
+                  <User className="h-5 w-5" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-white hover:bg-white/10 w-10 h-10 rounded-full"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
 
-        <h2 className="text-2xl font-bold text-[#102c54]">Your Virtual Credit Score</h2>
+        <h2 className="text-3xl font-bold text-[#102c54]">Your Virtual Credit Score</h2>
 
-        {/* Score Display with Semi-Circle Gauge */}
-        <Card className="shadow-lg border-0 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
-          <CardHeader className="bg-[#d8a434] text-white rounded-t-lg">
-            <CardTitle className="text-xl flex items-center gap-3">
-              <Award className="h-6 w-6" />
+        {/* Enhanced Score Display with Semi-Circle Gauge */}
+        <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
+          <CardHeader className="bg-gradient-to-r from-[#d8a434] to-[#f4c430] text-white rounded-t-lg">
+            <CardTitle className="text-2xl flex items-center gap-3">
+              <Award className="h-7 w-7" />
               Current Score
             </CardTitle>
           </CardHeader>
           <CardContent className="p-8 text-center">
-            <div className="space-y-4">
-              <SemiCircleGauge score={currentScore} size={280} />
+            <div className="space-y-6">
+              <SemiCircleGauge score={currentScore} size={320} />
               {creditScore?.last_calculated && (
                 <div className="text-sm text-gray-500">
                   Last updated: {format(new Date(creditScore.last_calculated), 'MMM dd, yyyy at h:mm a')}
@@ -369,11 +380,11 @@ const MyScorePage = () => {
           </CardContent>
         </Card>
 
-        {/* Breakdown Section */}
-        <Card className="shadow-lg border-0 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
+        {/* Enhanced Breakdown Section */}
+        <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
           <CardHeader>
-            <CardTitle className="text-[#102c54] flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
+            <CardTitle className="text-[#102c54] flex items-center gap-2 text-xl">
+              <TrendingUp className="h-6 w-6" />
               Score Breakdown
             </CardTitle>
           </CardHeader>
@@ -403,15 +414,15 @@ const MyScorePage = () => {
               {/* Breakdown Details */}
               <div className="space-y-4">
                 {chartData.map((item) => (
-                  <div key={item.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div key={item.name} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg hover:from-gray-100 hover:to-gray-200 transition-all duration-200">
                     <div className="flex items-center gap-3">
                       <div 
-                        className="w-4 h-4 rounded-full" 
+                        className="w-5 h-5 rounded-full" 
                         style={{ backgroundColor: item.color }}
                       />
-                      <span className="font-medium">{item.name}</span>
+                      <span className="font-semibold">{item.name}</span>
                     </div>
-                    <span className="text-lg font-bold">{item.value}%</span>
+                    <span className="text-xl font-bold">{item.value}%</span>
                   </div>
                 ))}
               </div>
@@ -419,27 +430,27 @@ const MyScorePage = () => {
           </CardContent>
         </Card>
 
-        {/* Recalculate Button */}
-        <Card className="shadow-lg border-0 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
+        {/* Enhanced Recalculate Button */}
+        <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
           <CardContent className="p-6 text-center">
             <Button
               onClick={handleRecalculate}
               disabled={isRecalculating}
-              className="bg-[#d8a434] hover:bg-[#d8a434]/90 text-white px-8 py-3 text-lg"
+              className="bg-gradient-to-r from-[#d8a434] to-[#f4c430] hover:from-[#e6b345] hover:to-[#f8d147] text-white px-10 py-4 text-lg font-semibold"
             >
               {isRecalculating ? (
                 <>
-                  <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                  <RefreshCw className="h-6 w-6 mr-3 animate-spin" />
                   Recalculating...
                 </>
               ) : (
                 <>
-                  <RefreshCw className="h-5 w-5 mr-2" />
+                  <RefreshCw className="h-6 w-6 mr-3" />
                   Recalculate Now
                 </>
               )}
             </Button>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-gray-500 mt-3">
               Updates your score based on latest transactions and goals
             </p>
           </CardContent>

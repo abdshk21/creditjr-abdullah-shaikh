@@ -57,64 +57,66 @@ const MyAccountPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white p-6 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 pb-24">
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* Header with branding and back button */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
+        {/* Enhanced Header with Gradient Background */}
+        <div className="bg-gradient-to-r from-[#102c54] via-[#1e3a72] to-[#2d4f8a] rounded-lg p-6 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/')}
+                className="text-white hover:bg-white/10 w-12 h-12 rounded-full"
+              >
+                <ArrowLeft className="h-6 w-6" />
+              </Button>
+              <div className="flex items-center gap-3">
+                <img 
+                  src="/lovable-uploads/ce9c86db-4914-4c0d-8753-b431569de422.png" 
+                  alt="Tyche Online Academy" 
+                  className="w-12 h-12 rounded-full border-2 border-white/20"
+                />
+                <div>
+                  <h1 className="text-3xl font-bold text-white">CreditJr</h1>
+                  <p className="text-white/80">By Tyche Online Academy</p>
+                </div>
+              </div>
+            </div>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate('/')}
-              className="text-[#102c54] hover:bg-gray-100"
+              onClick={handleLogout}
+              className="text-white hover:bg-white/10 w-12 h-12 rounded-full"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <LogOut className="h-6 w-6" />
             </Button>
-            <div className="flex items-center gap-3">
-              <img 
-                src="/lovable-uploads/ce9c86db-4914-4c0d-8753-b431569de422.png" 
-                alt="Tyche Online Academy" 
-                className="w-10 h-10 rounded-full"
-              />
-              <div>
-                <h1 className="text-2xl font-bold text-[#102c54]">CreditJr</h1>
-                <p className="text-sm text-gray-600">By Tyche Online Academy</p>
-              </div>
-            </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLogout}
-            className="text-[#102c54] hover:bg-gray-100"
-          >
-            <LogOut className="h-5 w-5" />
-          </Button>
         </div>
 
-        <h2 className="text-2xl font-bold text-[#102c54]">My Account</h2>
+        <h2 className="text-3xl font-bold text-[#102c54]">My Account</h2>
 
-        {/* Profile Card */}
-        <Card className="shadow-lg border-0 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
-          <CardHeader className="bg-[#d8a434] text-white rounded-t-lg">
-            <CardTitle className="text-xl flex items-center gap-3">
-              <User className="h-6 w-6" />
+        {/* Enhanced Profile Card */}
+        <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
+          <CardHeader className="bg-gradient-to-r from-[#d8a434] to-[#f4c430] text-white rounded-t-lg">
+            <CardTitle className="text-2xl flex items-center gap-3">
+              <User className="h-7 w-7" />
               Profile Settings
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6 space-y-6">
-            {/* Profile Picture Section */}
+          <CardContent className="p-8 space-y-6">
+            {/* Enhanced Profile Picture Section */}
             <div className="text-center space-y-4">
-              <div className="relative w-24 h-24 mx-auto">
+              <div className="relative w-32 h-32 mx-auto">
                 {profilePicture ? (
                   <img 
                     src={profilePicture} 
                     alt="Profile" 
-                    className="w-24 h-24 rounded-full object-cover border-4 border-gray-200"
+                    className="w-32 h-32 rounded-full object-cover border-4 border-[#d8a434] shadow-lg"
                   />
                 ) : (
-                  <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center border-4 border-gray-200">
-                    <User className="h-8 w-8 text-gray-500" />
+                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center border-4 border-[#d8a434] shadow-lg">
+                    <User className="h-12 w-12 text-gray-500" />
                   </div>
                 )}
               </div>
@@ -128,7 +130,7 @@ const MyAccountPage = () => {
                   id="profile-upload"
                 />
                 <label htmlFor="profile-upload">
-                  <Button variant="outline" className="cursor-pointer" asChild>
+                  <Button variant="outline" className="cursor-pointer border-2 border-[#d8a434] text-[#d8a434] hover:bg-[#d8a434] hover:text-white" asChild>
                     <span>
                       <Upload className="h-4 w-4 mr-2" />
                       Upload Photo
@@ -138,50 +140,50 @@ const MyAccountPage = () => {
               </div>
             </div>
 
-            {/* Display Name */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Display Name</label>
+            {/* Enhanced Display Name */}
+            <div className="space-y-3">
+              <label className="text-lg font-semibold text-gray-700">Display Name</label>
               <Input
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Enter your display name"
-                className="w-full"
+                className="w-full text-lg p-4 border-2 focus:border-[#d8a434]"
               />
             </div>
 
-            {/* Email (Read-only) */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Email</label>
+            {/* Enhanced Email (Read-only) */}
+            <div className="space-y-3">
+              <label className="text-lg font-semibold text-gray-700">Email</label>
               <Input
                 value={user?.email || ''}
                 disabled
-                className="w-full bg-gray-50"
+                className="w-full text-lg p-4 bg-gray-50 border-2"
               />
             </div>
 
-            {/* Save Button */}
+            {/* Enhanced Save Button */}
             <Button
               onClick={handleSaveProfile}
               disabled={isUpdating}
-              className="w-full bg-[#d8a434] hover:bg-[#d8a434]/90 text-white"
+              className="w-full bg-gradient-to-r from-[#d8a434] to-[#f4c430] hover:from-[#e6b345] hover:to-[#f8d147] text-white py-4 text-lg font-semibold"
             >
               {isUpdating ? 'Updating...' : 'Save Changes'}
             </Button>
           </CardContent>
         </Card>
 
-        {/* Account Actions */}
-        <Card className="shadow-lg border-0 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
+        {/* Enhanced Account Actions */}
+        <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
           <CardHeader>
-            <CardTitle className="text-[#102c54]">Account Actions</CardTitle>
+            <CardTitle className="text-[#102c54] text-xl">Account Actions</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <Button
               onClick={handleLogout}
               variant="outline"
-              className="w-full text-red-600 border-red-600 hover:bg-red-50"
+              className="w-full text-red-600 border-2 border-red-600 hover:bg-red-50 py-4 text-lg font-semibold"
             >
-              <LogOut className="h-4 w-4 mr-2" />
+              <LogOut className="h-5 w-5 mr-2" />
               Sign Out
             </Button>
           </CardContent>

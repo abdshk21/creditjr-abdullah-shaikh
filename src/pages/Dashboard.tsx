@@ -223,98 +223,124 @@ const Dashboard = () => {
     .slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-white p-6 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 pb-24">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header with branding and account */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <img 
-              src="/lovable-uploads/ce9c86db-4914-4c0d-8753-b431569de422.png" 
-              alt="Tyche Online Academy" 
-              className="w-12 h-12 rounded-full"
-            />
-            <div>
-              <h1 className="text-3xl font-bold text-[#102c54]">CreditJr</h1>
-              <p className="text-sm text-gray-600">By Tyche Online Academy</p>
+        {/* Enhanced Header with Gradient Background */}
+        <div className="bg-gradient-to-r from-[#102c54] via-[#1e3a72] to-[#2d4f8a] rounded-lg p-6 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <img 
+                src="/lovable-uploads/ce9c86db-4914-4c0d-8753-b431569de422.png" 
+                alt="Tyche Online Academy" 
+                className="w-16 h-16 rounded-full border-2 border-white/20"
+              />
+              <div>
+                <h1 className="text-4xl font-bold text-white">CreditJr</h1>
+                <p className="text-lg text-white/80">By Tyche Online Academy</p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/my-account')}
-              className="text-[#102c54] hover:bg-gray-100"
-            >
-              <User className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-[#102c54] hover:bg-gray-100"
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-3">
+              {user?.user_metadata?.avatar_url ? (
+                <img 
+                  src={user.user_metadata.avatar_url} 
+                  alt="Profile" 
+                  className="w-12 h-12 rounded-full border-2 border-white/20 cursor-pointer hover:border-white/40 transition-all"
+                  onClick={() => navigate('/my-account')}
+                />
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/my-account')}
+                  className="text-white hover:bg-white/10 w-12 h-12 rounded-full"
+                >
+                  <User className="h-6 w-6" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-white hover:bg-white/10 w-12 h-12 rounded-full"
+              >
+                <LogOut className="h-6 w-6" />
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* Financial Overview */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-[#102c54] mb-2">Financial Dashboard</h2>
-          <p className="text-gray-600">Your financial overview for {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+          <h2 className="text-3xl font-bold text-[#102c54] mb-2">Financial Dashboard</h2>
+          <p className="text-gray-600 text-lg">Your financial overview for {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
         </div>
 
-        {/* Summary Cards Grid */}
+        {/* Interactive Summary Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Monthly Allowance */}
-          <Card className="bg-[#d8a434] text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
+          {/* Monthly Allowance - Navigate to Set Goal */}
+          <Card 
+            className="bg-gradient-to-br from-[#d8a434] to-[#f4c430] text-white shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer hover:from-[#e6b345] hover:to-[#f8d147]"
+            onClick={() => navigate('/set-goal')}
+          >
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Target className="h-4 w-4" />
+              <CardTitle className="text-lg font-medium flex items-center gap-2">
+                <Target className="h-5 w-5" />
                 Monthly Allowance
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${monthlyAllowance.toFixed(2)}</div>
+              <div className="text-3xl font-bold">${monthlyAllowance.toFixed(2)}</div>
+              <p className="text-sm opacity-90 mt-1">Tap to set goals</p>
             </CardContent>
           </Card>
 
-          {/* Income Earned */}
-          <Card className="bg-green-500 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
+          {/* Income Earned - Navigate to Transaction History */}
+          <Card 
+            className="bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer hover:from-green-600 hover:to-green-700"
+            onClick={() => navigate('/transaction-history')}
+          >
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
+              <CardTitle className="text-lg font-medium flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
                 Income Earned
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${totalIncome.toFixed(2)}</div>
+              <div className="text-3xl font-bold">${totalIncome.toFixed(2)}</div>
+              <p className="text-sm opacity-90 mt-1">View history</p>
             </CardContent>
           </Card>
 
-          {/* Spent So Far */}
-          <Card className="bg-red-500 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
+          {/* Spent So Far - Navigate to Transaction History */}
+          <Card 
+            className="bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer hover:from-red-600 hover:to-red-700"
+            onClick={() => navigate('/transaction-history')}
+          >
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <TrendingDown className="h-4 w-4" />
+              <CardTitle className="text-lg font-medium flex items-center gap-2">
+                <TrendingDown className="h-5 w-5" />
                 Spent So Far
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${totalExpenses.toFixed(2)}</div>
+              <div className="text-3xl font-bold">${totalExpenses.toFixed(2)}</div>
+              <p className="text-sm opacity-90 mt-1">View history</p>
             </CardContent>
           </Card>
 
-          {/* Virtual Credit Score with Semi-Circle Gauge */}
-          <Card className="bg-[#102c54] text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-600 hover:to-purple-600">
+          {/* Credit Score - Navigate to My Score */}
+          <Card 
+            className="bg-gradient-to-br from-[#102c54] to-[#1e3a72] text-white shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer hover:from-[#1e3a72] hover:to-[#2d4f8a]"
+            onClick={() => navigate('/my-score')}
+          >
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
+              <CardTitle className="text-lg font-medium flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
                 Credit Score
               </CardTitle>
             </CardHeader>
             <CardContent className="flex justify-center">
-              <SemiCircleGauge score={creditScore?.score || 650} size={120} />
+              <SemiCircleGauge score={creditScore?.score || 650} size={140} />
             </CardContent>
           </Card>
         </div>
@@ -322,10 +348,10 @@ const Dashboard = () => {
         {/* Breakdown Panels */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top Spending Categories */}
-          <Card className="shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
+          <Card className="shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 border-0">
             <CardHeader>
-              <CardTitle className="text-[#102c54] flex items-center gap-2">
-                <TrendingDown className="h-5 w-5" />
+              <CardTitle className="text-[#102c54] flex items-center gap-2 text-xl">
+                <TrendingDown className="h-6 w-6" />
                 Top Spending Categories
               </CardTitle>
             </CardHeader>
@@ -335,17 +361,17 @@ const Dashboard = () => {
                   topSpendingCategories.map(([category, amount], index) => {
                     const Icon = getCategoryIcon(category);
                     return (
-                      <div key={category} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-                            <Icon className="h-4 w-4 text-red-600" />
+                      <div key={category} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg hover:from-gray-100 hover:to-gray-200 transition-all duration-200">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                            <Icon className="h-5 w-5 text-red-600" />
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900">{category}</p>
+                            <p className="font-semibold text-gray-900">{category}</p>
                             <p className="text-sm text-gray-500">#{index + 1} category</p>
                           </div>
                         </div>
-                        <span className="font-bold text-red-600">${amount.toFixed(2)}</span>
+                        <span className="font-bold text-red-600 text-lg">${amount.toFixed(2)}</span>
                       </div>
                     );
                   })
@@ -357,10 +383,10 @@ const Dashboard = () => {
           </Card>
 
           {/* Top Income Sources */}
-          <Card className="shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
+          <Card className="shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 border-0">
             <CardHeader>
-              <CardTitle className="text-[#102c54] flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
+              <CardTitle className="text-[#102c54] flex items-center gap-2 text-xl">
+                <TrendingUp className="h-6 w-6" />
                 Top Income Sources
               </CardTitle>
             </CardHeader>
@@ -370,17 +396,17 @@ const Dashboard = () => {
                   topIncomeSources.map(([category, amount], index) => {
                     const Icon = getCategoryIcon(category);
                     return (
-                      <div key={category} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                            <Icon className="h-4 w-4 text-green-600" />
+                      <div key={category} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg hover:from-gray-100 hover:to-gray-200 transition-all duration-200">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <Icon className="h-5 w-5 text-green-600" />
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900">{category}</p>
+                            <p className="font-semibold text-gray-900">{category}</p>
                             <p className="text-sm text-gray-500">#{index + 1} source</p>
                           </div>
                         </div>
-                        <span className="font-bold text-green-600">${amount.toFixed(2)}</span>
+                        <span className="font-bold text-green-600 text-lg">${amount.toFixed(2)}</span>
                       </div>
                     );
                   })
@@ -392,13 +418,13 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Floating Add Button - Fixed positioning with proper z-index */}
+        {/* Floating Add Button */}
         <Button
           size="lg"
-          className="fixed bottom-28 right-5 w-14 h-14 rounded-full bg-[#d8a434] hover:bg-[#d8a434]/90 shadow-xl z-[60] transition-all duration-200 hover:scale-105"
-          onClick={() => window.location.href = '/add-transaction'}
+          className="fixed bottom-28 right-5 w-16 h-16 rounded-full bg-[#d8a434] hover:bg-[#d8a434]/90 shadow-2xl z-[60] transition-all duration-200 hover:scale-110"
+          onClick={() => navigate('/add-transaction')}
         >
-          <Plus className="h-6 w-6" />
+          <Plus className="h-7 w-7" />
         </Button>
       </div>
     </div>
