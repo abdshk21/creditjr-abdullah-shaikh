@@ -2,58 +2,80 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
-import { format } from 'date-fns';
-import { CalendarIcon, ArrowLeft, UtensilsCrossed, Car, BookOpen, Gamepad2, Gift, DollarSign } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Plus, RefreshCw, DollarSign, User, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import Confetti from '@/components/Confetti';
 
+interface Transaction {
+  id: string;
+  amount: number;
+  category: string;
+  description: string;
+  type: 'income' | 'expense';
+  date: string;
+}
+
 const AddTransactionPage = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
-  
+  const { user } = useAuth();
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
-  const [type, setType] = useState<'income' | 'expense'>('expense');
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState<Date>(new Date());
+  const [type, setType] = useState<'income' | 'expense'>('expense');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
+  // Dynamic categories based on transaction type
   const expenseCategories = [
-    { value: 'Food', label: 'Food', icon: UtensilsCrossed },
-    { value: 'Transport', label: 'Transport', icon: Car },
-    { value: 'Education', label: 'Education', icon: BookOpen },
-    { value: 'Entertainment', label: 'Entertainment', icon: Gamepad2 },
-    { value: 'Gifts', label: 'Gifts', icon: Gift },
-    { value: 'Misc', label: 'Misc', icon: DollarSign }
+    'Food & Dining',
+    'Shopping',
+    'Transportation',
+    'Entertainment',
+    'Bills & Utilities',
+    'Healthcare',
+    'Education',
+    'Personal Care',
+    'Travel',
+    'Other'
   ];
 
   const incomeCategories = [
-    { value: 'Pocket Money', label: 'Pocket Money', icon: DollarSign },
-    { value: 'Gift', label: 'Gift', icon: Gift },
-    { value: 'Freelance', label: 'Freelance', icon: DollarSign },
-    { value: 'Allowance', label: 'Allowance', icon: DollarSign },
-    { value: 'Bonus', label: 'Bonus', icon: DollarSign },
-    { value: 'Sale', label: 'Sale', icon: DollarSign },
-    { value: 'Other Income', label: 'Other Income', icon: DollarSign }
+    'Pocket Money',
+    'Gift',
+    'Freelance',
+    'Allowance',
+    'Bonus',
+    'Sale',
+    'Other Income'
   ];
 
   const categories = type === 'income' ? incomeCategories : expenseCategories;
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/auth');
+  };
+
+  const isValidAmount = (value: string): boolean => {
+    const regex = /^\d+(\.\d{0,2})?$/;
+    return regex.test(value);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!amount || !category || !user?.id) {
-      toast.error('Please fill in all required fields');
+    if (!user?.id) {
+      alert('Please log in to add transactions');
+      return;
+    }
+
+    if (!amount || !category || !date) {
+      alert('Please fill in all required fields');
       return;
     }
 
@@ -62,129 +84,147 @@ const AddTransactionPage = () => {
     try {
       const { error } = await supabase
         .from('transactions')
-        .insert([
-          {
-            user_id: user.id,
-            amount: parseFloat(amount),
-            type: type,
-            category: category,
-            description: description || null,
-            date: format(date, 'yyyy-MM-dd'),
-            affects_score: type === 'expense'
-          }
-        ]);
+        .insert({
+          user_id: user.id,
+          amount: parseFloat(amount),
+          category,
+          description: description || null,
+          type,
+          date,
+          affects_score: true
+        });
 
       if (error) {
-        console.error('Error inserting transaction:', error);
-        toast.error('Failed to save transaction: ' + error.message);
+        console.error('Error adding transaction:', error);
+        alert('Failed to add transaction. Please try again.');
         return;
       }
 
-      // Clear form
+      // Trigger confetti for income transactions
+      if (type === 'income') {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3000);
+      }
+
+      // Reset form
       setAmount('');
       setCategory('');
       setDescription('');
-      setDate(new Date());
-
-      if (type === 'income') {
-        // Show confetti for income
-        setShowConfetti(true);
-        toast.success('Nice! You earned some extra د.إ today! 🎉');
-        setTimeout(() => setShowConfetti(false), 3000);
-      } else {
-        toast.success('✅ Transaction saved!');
-      }
-
-      // Navigate back after a short delay
-      setTimeout(() => {
-        navigate('/');
-      }, 1500);
+      setDate(new Date().toISOString().split('T')[0]);
+      
+      // Show success message
+      alert(`${type === 'income' ? 'Income' : 'Expense'} added successfully!`);
+      
+      // Navigate back to dashboard
+      navigate('/');
     } catch (error) {
-      console.error('Error saving transaction:', error);
-      toast.error('Failed to save transaction. Please try again.');
+      console.error('Error adding transaction:', error);
+      alert('An unexpected error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-white p-6 pb-24">
-      {showConfetti && <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 pb-24">
+      {/* Confetti Component */}
+      <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
       
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/')}
-            className="text-[#102c54] hover:bg-gray-100"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-3xl font-bold text-[#102c54]">Add Transaction</h1>
+        {/* Enhanced Header */}
+        <div className="bg-gradient-to-r from-[#102c54] via-[#1e3a72] to-[#2d4f8a] rounded-lg p-6 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/')}
+                className="text-white hover:bg-white/10 w-12 h-12 rounded-full"
+              >
+                <ArrowLeft className="h-6 w-6" />
+              </Button>
+              <div className="flex items-center gap-3">
+                <img 
+                  src="/lovable-uploads/ce9c86db-4914-4c0d-8753-b431569de422.png" 
+                  alt="Tyche Online Academy" 
+                  className="w-12 h-12 rounded-full border-2 border-white/20"
+                />
+                <div>
+                  <h1 className="text-3xl font-bold text-white">Add Transaction</h1>
+                  <p className="text-white/80">Track your income and expenses</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {user?.user_metadata?.avatar_url ? (
+                <img 
+                  src={user.user_metadata.avatar_url} 
+                  alt="Profile" 
+                  className="w-10 h-10 rounded-full border-2 border-white/20 cursor-pointer hover:border-white/40 transition-all"
+                  onClick={() => navigate('/my-account')}
+                />
+              ) : null}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/my-account')}
+                className={`text-white hover:bg-white/10 w-10 h-10 rounded-full ${user?.user_metadata?.avatar_url ? 'hidden' : ''}`}
+              >
+                <User className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-white hover:bg-white/10 w-10 h-10 rounded-full"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
         </div>
 
-        {/* Form */}
-        <Card className="shadow-lg border-0">
-          <CardHeader className="bg-[#102c54] text-white rounded-t-lg">
-            <CardTitle className="text-xl">Transaction Details</CardTitle>
+        {/* Transaction Form */}
+        <Card className="shadow-lg border-0 hover:shadow-2xl transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="text-[#102c54] flex items-center gap-2">
+              <Plus className="h-6 w-6" />
+              Transaction Details
+            </CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Type Selection */}
-              <div className="space-y-3">
-                <Label className="text-base font-semibold text-[#102c54]">Transaction Type</Label>
-                <div className="flex gap-4">
-                  <Button
-                    type="button"
-                    variant={type === 'expense' ? 'default' : 'outline'}
-                    onClick={() => {
-                      setType('expense');
-                      setCategory(''); // Reset category when type changes
-                    }}
-                    className={cn(
-                      "flex-1 py-3 text-base font-semibold",
-                      type === 'expense' 
-                        ? "bg-red-600 hover:bg-red-700 text-white" 
-                        : "border-red-600 text-red-600 hover:bg-red-50"
-                    )}
-                  >
-                    Expense
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={type === 'income' ? 'default' : 'outline'}
-                    onClick={() => {
-                      setType('income');
-                      setCategory(''); // Reset category when type changes
-                    }}
-                    className={cn(
-                      "flex-1 py-3 text-base font-semibold",
-                      type === 'income' 
-                        ? "bg-green-600 hover:bg-green-700 text-white" 
-                        : "border-green-600 text-green-600 hover:bg-green-50"
-                    )}
-                  >
-                    Income
-                  </Button>
-                </div>
+              {/* Transaction Type */}
+              <div className="space-y-2">
+                <Label htmlFor="type" className="text-[#102c54] font-semibold">Transaction Type *</Label>
+                <Select value={type} onValueChange={(value: 'income' | 'expense') => {
+                  setType(value);
+                  setCategory(''); // Reset category when type changes
+                }}>
+                  <SelectTrigger className="border-2 border-gray-200 focus:border-[#102c54]">
+                    <SelectValue placeholder="Select transaction type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="expense">Expense</SelectItem>
+                    <SelectItem value="income">Income</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Amount */}
               <div className="space-y-2">
-                <Label className="text-base font-semibold text-[#102c54]">Amount *</Label>
+                <Label htmlFor="amount" className="text-[#102c54] font-semibold">Amount (د.إ) *</Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-lg font-medium text-gray-600">
-                    د.إ
-                  </span>
+                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                   <Input
+                    id="amount"
                     type="number"
                     step="0.01"
-                    placeholder="0.00"
+                    min="0"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="text-lg border-2 focus:border-[#d8a434] pl-12"
+                    placeholder="0.00"
+                    className="pl-10 border-2 border-gray-200 focus:border-[#102c54]"
                     required
                   />
                 </div>
@@ -192,74 +232,63 @@ const AddTransactionPage = () => {
 
               {/* Category */}
               <div className="space-y-2">
-                <Label className="text-base font-semibold text-[#102c54]">Category *</Label>
-                <Select value={category} onValueChange={setCategory} required>
-                  <SelectTrigger className="border-2 focus:border-[#d8a434]">
-                    <SelectValue placeholder="Select category" />
+                <Label htmlFor="category" className="text-[#102c54] font-semibold">Category *</Label>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger className="border-2 border-gray-200 focus:border-[#102c54]">
+                    <SelectValue placeholder={`Select ${type} category`} />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border-2">
-                    {categories.map((cat) => {
-                      const Icon = cat.icon;
-                      return (
-                        <SelectItem key={cat.value} value={cat.value}>
-                          <div className="flex items-center gap-2">
-                            <Icon className="h-4 w-4" />
-                            {cat.label}
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
               {/* Description */}
               <div className="space-y-2">
-                <Label className="text-base font-semibold text-[#102c54]">Description (Optional)</Label>
-                <Textarea
-                  placeholder="Add a note about this transaction..."
+                <Label htmlFor="description" className="text-[#102c54] font-semibold">Description</Label>
+                <Input
+                  id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  rows={3}
-                  className="border-2 focus:border-[#d8a434]"
+                  placeholder="Optional description"
+                  className="border-2 border-gray-200 focus:border-[#102c54]"
                 />
               </div>
 
               {/* Date */}
               <div className="space-y-2">
-                <Label className="text-base font-semibold text-[#102c54]">Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal border-2 hover:border-[#d8a434]",
-                        !date && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date ? format(date, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-white border-2" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={(selectedDate) => selectedDate && setDate(selectedDate)}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
+                <Label htmlFor="date" className="text-[#102c54] font-semibold">Date *</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="border-2 border-gray-200 focus:border-[#102c54]"
+                  required
+                />
               </div>
 
               {/* Submit Button */}
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-[#d8a434] hover:bg-[#d8a434]/90 text-white py-3 text-lg font-semibold h-12"
+                className="w-full bg-gradient-to-r from-[#102c54] to-[#1e3a72] hover:from-[#1e3a72] hover:to-[#2d4f8a] text-white py-3 text-lg font-semibold"
               >
-                {isSubmitting ? 'Saving...' : 'Save Transaction'}
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                    Adding Transaction...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-5 w-5 mr-2" />
+                    Add {type === 'income' ? 'Income' : 'Expense'}
+                  </>
+                )}
               </Button>
             </form>
           </CardContent>
