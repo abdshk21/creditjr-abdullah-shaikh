@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -325,6 +326,7 @@ const MyScorePage = () => {
     { name: 'Logging Consistency', value: breakdown.loggingConsistency, color: '#3b82f6' }
   ];
 
+  // Fixed timestamp formatting function
   const formatLastUpdated = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -333,6 +335,7 @@ const MyScorePage = () => {
       }
       return format(date, 'MMM dd, yyyy – h:mm a');
     } catch (error) {
+      console.error('Error formatting date:', error);
       return 'Never';
     }
   };
@@ -385,17 +388,21 @@ const MyScorePage = () => {
                   alt="Profile" 
                   className="w-10 h-10 rounded-full border-2 border-white/20 cursor-pointer hover:border-white/40 transition-all"
                   onClick={() => navigate('/my-account')}
+                  onError={(e) => {
+                    // Fallback to default user icon if image fails to load
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
                 />
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/my-account')}
-                  className="text-white hover:bg-white/10 w-10 h-10 rounded-full"
-                >
-                  <User className="h-5 w-5" />
-                </Button>
-              )}
+              ) : null}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/my-account')}
+                className={`text-white hover:bg-white/10 w-10 h-10 rounded-full ${user?.user_metadata?.avatar_url ? 'hidden' : ''}`}
+              >
+                <User className="h-5 w-5" />
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"

@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, TrendingUp, TrendingDown, UtensilsCrossed, Car, BookOpen, Gamepad2, Gift, DollarSign, CheckCircle, XCircle, Plus } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, UtensilsCrossed, Car, BookOpen, Gamepad2, Gift, DollarSign, AlertTriangle, CheckCircle, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -159,6 +160,7 @@ const TransactionHistoryPage = () => {
             filteredTransactions.map((transaction) => {
               const CategoryIcon = getCategoryIcon(transaction.category);
               const isIncome = transaction.type === 'income';
+              const hasNegativeScoreImpact = transaction.type === 'expense' && transaction.affects_score;
               
               return (
                 <Card key={transaction.id} className="shadow-lg border-0 hover:shadow-xl transition-shadow">
@@ -216,14 +218,19 @@ const TransactionHistoryPage = () => {
                         </div>
                         
                         <div className="flex items-center justify-end gap-1">
-                          {transaction.affects_score ? (
+                          {hasNegativeScoreImpact ? (
                             <>
-                              <CheckCircle className="h-4 w-4 text-[#d8a434]" />
-                              <span className="text-xs text-[#d8a434] font-medium">Affects Score</span>
+                              <AlertTriangle className="h-4 w-4 text-orange-500" />
+                              <span className="text-xs text-orange-500 font-medium">Affects Score</span>
+                            </>
+                          ) : isIncome ? (
+                            <>
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                              <span className="text-xs text-green-500 font-medium">Positive Impact</span>
                             </>
                           ) : (
                             <>
-                              <XCircle className="h-4 w-4 text-gray-400" />
+                              <CheckCircle className="h-4 w-4 text-gray-400" />
                               <span className="text-xs text-gray-400 font-medium">No Score Impact</span>
                             </>
                           )}

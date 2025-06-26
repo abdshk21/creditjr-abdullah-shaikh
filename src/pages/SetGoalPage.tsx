@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,9 +42,10 @@ const SetGoalPage = () => {
     enabled: !!user?.id,
   });
 
-  // Set the input values when existing goals are loaded
+  // Set the input values when existing goals are loaded - FIXED MAPPING
   useEffect(() => {
     if (existingGoals) {
+      // Fix the mapping: income_expectation goes to Monthly Allowance, monthly_saving_goal goes to Savings Target
       if (existingGoals.income_expectation) {
         setIncomeExpectation(existingGoals.income_expectation.toString());
       }
@@ -92,7 +94,7 @@ const SetGoalPage = () => {
         return;
       }
 
-      toast.success(`Goals Updated! Saving: ${savingGoalNum} د.إ, Income: ${incomeNum} د.إ`);
+      toast.success(`Goals Updated! Allowance: ${incomeNum} د.إ, Savings: ${savingGoalNum} د.إ`);
       
       setTimeout(() => {
         navigate('/');
@@ -146,8 +148,8 @@ const SetGoalPage = () => {
                 <Input
                   id="monthly-allowance"
                   type="number"
-                  value={monthlySavingGoal}
-                  onChange={(e) => setMonthlySavingGoal(e.target.value)}
+                  value={incomeExpectation}
+                  onChange={(e) => setIncomeExpectation(e.target.value)}
                   placeholder="0.00"
                   className="pl-12 text-lg h-12 border-2 border-gray-200 focus:border-[#102c54]"
                   min="0"
@@ -168,8 +170,8 @@ const SetGoalPage = () => {
                 <Input
                   id="savings-goal"
                   type="number"
-                  value={incomeExpectation}
-                  onChange={(e) => setIncomeExpectation(e.target.value)}
+                  value={monthlySavingGoal}
+                  onChange={(e) => setMonthlySavingGoal(e.target.value)}
                   placeholder="0.00"
                   className="pl-12 text-lg h-12 border-2 border-gray-200 focus:border-[#102c54]"
                   min="0"

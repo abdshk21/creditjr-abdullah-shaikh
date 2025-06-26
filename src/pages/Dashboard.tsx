@@ -109,8 +109,10 @@ const Dashboard = () => {
 
   const monthlyIncome = goals?.income_expectation || 2000;
   const savingsGoal = goals?.monthly_saving_goal || 500;
-  const actualSavings = totalIncome - totalExpenses;
-  const savingsProgress = (actualSavings / savingsGoal) * 100;
+  
+  // Fix savings calculation - only count actual savings (income - expenses), not just expenses
+  const actualSavings = Math.max(0, totalIncome - totalExpenses);
+  const savingsProgress = savingsGoal > 0 ? (actualSavings / savingsGoal) * 100 : 0;
 
   const chartData = Array.from({ length: 12 }, (_, i) => {
     const month = new Date(currentYear, currentMonth - i, 1);
@@ -188,17 +190,21 @@ const Dashboard = () => {
                   alt="Profile" 
                   className="w-12 h-12 rounded-full border-2 border-white/20 cursor-pointer hover:border-white/40 transition-all"
                   onClick={() => navigate('/my-account')}
+                  onError={(e) => {
+                    // Fallback to default user icon if image fails to load
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
                 />
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/my-account')}
-                  className="text-white hover:bg-white/10 w-12 h-12 rounded-full"
-                >
-                  <User className="h-6 w-6" />
-                </Button>
-              )}
+              ) : null}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/my-account')}
+                className={`text-white hover:bg-white/10 w-12 h-12 rounded-full ${user?.user_metadata?.avatar_url ? 'hidden' : ''}`}
+              >
+                <User className="h-6 w-6" />
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
