@@ -1,24 +1,36 @@
+
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { TrendingUp, TrendingDown, DollarSign, Calendar, ArrowLeft } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Calendar, ArrowLeft, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import { useCreditScore } from '@/hooks/useCreditScore';
 import FloatingAddButton from '@/components/FloatingAddButton';
 
 const MyScorePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { 
+    score, 
+    getScoreColor, 
+    getScoreLabel, 
+    recalculateScore, 
+    totalIncome, 
+    totalExpenses, 
+    savings, 
+    goals 
+  } = useCreditScore();
 
   const today = new Date();
   const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-  // Fetch transactions for the current month
-  const { data: monthlyTransactions, isLoading: isTransactionsLoading, error: transactionsError } = useQuery({
+  // Fetch transactions for recent activity display
+  const { data: monthlyTransactions } = useQuery({
     queryKey: ['monthlyTransactions', user?.id, firstDayOfMonth, lastDayOfMonth],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -28,7 +40,8 @@ const MyScorePage = () => {
         .select('*')
         .eq('user_id', user.id)
         .gte('date', format(firstDayOfMonth, 'yyyy-MM-dd'))
-        .lte('date', format(lastDayOfMonth, 'yyyy-MM-dd'));
+        .lte('date', format(lastDayOfMonth, 'yyyy-MM-dd'))
+        .order('date', { ascending: false });
 
       if (error) {
         console.error('Error fetching transactions:', error);
@@ -39,68 +52,12 @@ const MyScorePage = () => {
     },
   });
 
-  // Fetch user's goals
-  const { data: goals, isLoading: isGoalsLoading, error: goalsError } = useQuery({
-    queryKey: ['goals', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
+  const scoreColor = getScoreColor(score);
+  const scoreLabel = getScoreLabel(score);
 
-      const { data, error } = await supabase
-        .from('goals')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error) {
-        console.error('Error fetching goals:', error);
-        return null;
-      }
-
-      return data;
-    },
-  });
-
-  const income = monthlyTransactions?.filter(t => t.type === 'income') || [];
-  const expenses = monthlyTransactions?.filter(t => t.type === 'expense') || [];
-
-  const totalIncome = income.reduce((sum, t) => sum + t.amount, 0);
-  const totalExpenses = expenses.reduce((sum, t) => sum + t.amount, 0);
-  const savings = totalIncome - totalExpenses;
-
-  const calculateScore = () => {
-    let score = 50; // Start with a base score
-
-    // Increase score for saving
-    if (savings > 0) {
-      score += 20;
-    }
-
-    // Increase score if expenses are below 80% of income
-    if (totalExpenses < 0.8 * totalIncome) {
-      score += 15;
-    }
-
-    // Increase score if savings goal is set
-     if (goals?.monthly_saving_goal) {
-          score += 15;
-      }
-
-    // Reduce score if expenses exceed income
-    if (totalExpenses > totalIncome) {
-      score -= 30;
-    }
-
-    // Reduce score if no transactions added
-    if (!monthlyTransactions?.length) {
-      score -= 10;
-    }
-
-    return Math.max(0, Math.min(100, score)); // Ensure score is within 0-100 range
+  const handleRecalculate = async () => {
+    await recalculateScore();
   };
-
-  const score = calculateScore();
 
   return (
     <div className="min-h-screen bg-white p-6 pb-24">
@@ -116,6 +73,14 @@ const MyScorePage = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-3xl font-bold text-[#102c54]">My Score</h1>
+          <Button
+            onClick={handleRecalculate}
+            className="ml-auto bg-[#d8a434] hover:bg-[#d8a434]/90 text-white"
+            size="sm"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Recalculate
+          </Button>
         </div>
 
         {/* Score Display */}
@@ -124,14 +89,21 @@ const MyScorePage = () => {
             <CardTitle className="text-xl">Financial Health Score</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="text-5xl font-bold text-center text-[#102c54]">{score} / 100</div>
-            <Progress value={score} className="mt-4 h-4" />
-            <div className="mt-4 text-center text-sm text-gray-600">
-              {score >= 70
-                ? 'Great job! Keep up the excellent financial habits.'
-                : score >= 40
-                  ? 'Good progress! There\'s room for improvement. Set some goals!'
-                  : 'Needs attention. Start tracking your expenses and set a budget.'}
+            <div className="text-center">
+              <div className="text-5xl font-bold mb-2" style={{ color: scoreColor }}>
+                {score} / 100
+              </div>
+              <div className="text-lg font-semibold mb-4" style={{ color: scoreColor }}>
+                {scoreLabel}
+              </div>
+              <Progress value={score} className="h-4" />
+              <div className="mt-4 text-center text-sm text-gray-600">
+                {score >= 70
+                  ? 'Great job! Keep up the excellent financial habits.'
+                  : score >= 40
+                    ? 'Good progress! There\'s room for improvement. Set some goals!'
+                    : 'Needs attention. Start tracking your expenses and set a budget.'}
+              </div>
             </div>
           </CardContent>
         </Card>
