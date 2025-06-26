@@ -1,12 +1,11 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Award, ArrowLeft, RefreshCw, TrendingUp, User, LogOut } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Award, User, LogOut, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import Confetti from '@/components/Confetti';
@@ -342,6 +341,15 @@ const MyScorePage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 pb-24">
+      {/* Floating Add Transaction Button */}
+      <Button
+        onClick={() => navigate('/add-transaction')}
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#d8a434] hover:bg-[#d8a434]/90 text-white shadow-lg z-50"
+        size="icon"
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
+
       {/* Confetti Component */}
       <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
       

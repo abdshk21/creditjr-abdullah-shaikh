@@ -1,13 +1,12 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Lightbulb, ArrowLeft, TrendingUp, Target, Calendar, Award, User, LogOut } from 'lucide-react';
+import { Lightbulb, ArrowLeft, TrendingUp, Target, Calendar, Award, User, LogOut, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import LovableClaudeChat from '@/components/LovableClaudeChat';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, ReferenceLine } from 'recharts';
 
 interface Transaction {
   id: string;
@@ -208,6 +207,41 @@ const RecommendationsPage = () => {
     const lastScore = creditScore?.score || 650;
     const loggingCount = weeklyTransactions.length;
 
+    // Weekly behavior analysis for personalized tips
+    const lastWeekTransactions = transactions.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      const lastWeekStart = new Date(weekStart);
+      lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+      return transactionDate >= lastWeekStart && transactionDate < weekStart;
+    });
+
+    // Find overspending categories this week vs last week
+    const thisWeekSpending: { [key: string]: number } = {};
+    const lastWeekSpending: { [key: string]: number } = {};
+    
+    weeklyTransactions.filter(t => t.type === 'expense').forEach(t => {
+      thisWeekSpending[t.category] = (thisWeekSpending[t.category] || 0) + Number(t.amount);
+    });
+    
+    lastWeekTransactions.filter(t => t.type === 'expense').forEach(t => {
+      lastWeekSpending[t.category] = (lastWeekSpending[t.category] || 0) + Number(t.amount);
+    });
+
+    const overspendingCategory = Object.keys(thisWeekSpending).find(category => 
+      thisWeekSpending[category] > (lastWeekSpending[category] || 0) * 1.5
+    );
+
+    // Check logging consistency (missed days)
+    const today = new Date();
+    const last7Days = Array.from({length: 7}, (_, i) => {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      return date.toDateString();
+    });
+    
+    const loggedDays = new Set(weeklyTransactions.map(t => new Date(t.date).toDateString()));
+    const missedDays = last7Days.filter(day => !loggedDays.has(day)).length;
+
     return {
       monthlyAllowance,
       totalSpending,
@@ -215,26 +249,67 @@ const RecommendationsPage = () => {
       actualSavings,
       categoryBreakdown,
       lastScore,
-      loggingCount
+      loggingCount,
+      overspendingCategory,
+      missedDays,
+      thisWeekSpending,
+      lastWeekSpending
     };
   };
 
   const analysis = getFinancialAnalysis();
 
-  // AI Finance Coach Analysis
+  // Enhanced AI Finance Coach Analysis
   const generateCoachFeedback = () => {
     const spendingRatio = analysis.totalSpending / analysis.monthlyAllowance;
     const savingsProgress = analysis.actualSavings / analysis.savingsGoal;
     
-    // Overall summary
+    // Overall summary with mood indicator
     let overallSummary = "";
+    let moodEmoji = "";
+    let scoreChange = "";
+    
     if (spendingRatio <= 0.7 && savingsProgress >= 0.8) {
       overallSummary = "🎉 You're doing fantastic! Great spending control and you're smashing your savings goals!";
+      moodEmoji = "😄";
+      scoreChange = "Great progress this week! Keep it up!";
     } else if (spendingRatio <= 0.8) {
       overallSummary = "👍 Pretty solid financial habits! You're staying mostly on track.";
+      moodEmoji = "😊";
+      scoreChange = "Keeping steady – nice job staying consistent!";
     } else {
       overallSummary = "💪 Room for improvement, but that's totally normal! Let's work on building better habits together.";
+      moodEmoji = "😐";
+      scoreChange = "Bit of a dip this week, but your habits are still strong 💪. Let's bounce back!";
     }
+
+    // Weekly Score Summary
+    const weeklyScoreSummary = `Credit Score: +15 🔼 / Logging: ${analysis.loggingCount} days ✅ / Spending: ${spendingRatio <= 0.8 ? 'On track' : 'Over budget'} ${spendingRatio <= 0.8 ? '⚖️' : '⚠️'}`;
+
+    // Personalized weekly focus
+    let weeklyFocus = "";
+    
+    if (analysis.overspendingCategory) {
+      const categorySpending = analysis.thisWeekSpending[analysis.overspendingCategory];
+      const suggestedLimit = Math.ceil(categorySpending * 0.8);
+      weeklyFocus = `You've spent more on ${analysis.overspendingCategory} this week than usual. Want to challenge yourself to keep it under ${suggestedLimit} د.إ?`;
+    } else if (analysis.missedDays >= 2) {
+      weeklyFocus = "🎯 Mission: Log every transaction this week to build your streak!";
+    } else if (spendingRatio <= 0.8) {
+      weeklyFocus = "Try saving 10% more than last week – can you hit it?";
+    } else {
+      weeklyFocus = "Focus on one category this week and track every expense. Small steps lead to big wins!";
+    }
+
+    // Motivational quote
+    const motivationalQuotes = [
+      "'Small habits, big wins.' You're doing amazing!",
+      "'Every dirham counts.' Your future self will thank you!",
+      "'Progress over perfection.' Keep building those good habits!",
+      "'Smart spending today, bright future tomorrow.' You've got this!"
+    ];
+    
+    const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
 
     // Overspending categories
     const overspendingCategories = Object.entries(analysis.categoryBreakdown)
@@ -291,6 +366,11 @@ const RecommendationsPage = () => {
 
     return {
       overallSummary,
+      moodEmoji,
+      scoreChange,
+      weeklyScoreSummary,
+      weeklyFocus,
+      randomQuote,
       overspendingCategories,
       savingsEvaluation,
       newScore,
@@ -307,13 +387,31 @@ const RecommendationsPage = () => {
     color: `#${Math.floor(Math.random()*16777215).toString(16)}`
   }));
 
+  // Fixed savings chart data with proper color handling for negative values
   const savingsChartData = [
-    { name: 'Saved', value: analysis.actualSavings, color: '#22c55e' },
-    { name: 'Goal Remaining', value: Math.max(0, analysis.savingsGoal - analysis.actualSavings), color: '#e5e7eb' }
+    { 
+      name: 'Saved', 
+      value: analysis.actualSavings,
+      fill: analysis.actualSavings >= 0 ? '#22c55e' : '#ef4444' // Green for positive, red for negative
+    },
+    { 
+      name: 'Goal Remaining', 
+      value: Math.max(0, analysis.savingsGoal - Math.max(0, analysis.actualSavings)), 
+      fill: '#e5e7eb' 
+    }
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 pb-24">
+      {/* Floating Add Transaction Button */}
+      <Button
+        onClick={() => navigate('/add-transaction')}
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#d8a434] hover:bg-[#d8a434]/90 text-white shadow-lg z-50"
+        size="icon"
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
+
       <div className="max-w-7xl mx-auto">
         {/* Enhanced Header with Gradient Background */}
         <div className="bg-gradient-to-r from-[#102c54] via-[#1e3a72] to-[#2d4f8a] rounded-lg p-6 shadow-lg mb-8">
@@ -388,20 +486,41 @@ const RecommendationsPage = () => {
               </CardContent>
             </Card>
 
-            {/* 2. How You're Doing Overall */}
+            {/* 2. Enhanced How You're Doing Overall */}
             <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
               <CardHeader>
                 <CardTitle className="text-[#102c54] flex items-center gap-2 text-xl">
                   <Lightbulb className="h-6 w-6" />
-                  How You're Doing Overall
+                  How You're Doing Overall {feedback.moodEmoji}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <p className="text-lg">{feedback.overallSummary}</p>
+                
+                {/* Weekly Score Summary */}
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold text-blue-800 mb-2">📊 Weekly Score Summary:</h4>
+                  <p className="text-blue-700">{feedback.weeklyScoreSummary}</p>
+                </div>
+                
+                {/* Performance feedback */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-gray-700 font-medium">{feedback.scoreChange}</p>
+                </div>
+                
+                {/* Motivational quote */}
+                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-lg border border-yellow-200">
+                  <p className="text-orange-800 italic">{feedback.randomQuote}</p>
+                </div>
+                
+                {/* Streak counter */}
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <span>🔥 Logging streak: {analysis.loggingCount} days this week</span>
+                </div>
               </CardContent>
             </Card>
 
-            {/* 3. This Week's Focus */}
+            {/* 3. Enhanced This Week's Focus */}
             <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
               <CardHeader>
                 <CardTitle className="text-[#102c54] flex items-center gap-2 text-xl">
@@ -410,9 +529,21 @@ const RecommendationsPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-lg">
-                  <h4 className="font-semibold text-green-800 mb-3 text-lg">💡 Your Action Item:</h4>
-                  <p className="text-green-700 text-base">{feedback.improvement}</p>
+                <div className="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-lg space-y-4">
+                  <h4 className="font-semibold text-green-800 mb-3 text-lg">🎯 Your Weekly Challenge:</h4>
+                  <p className="text-green-700 text-base">{feedback.weeklyFocus}</p>
+                  
+                  {/* Last week's completion status */}
+                  <div className="border-t border-green-200 pt-3 mt-3">
+                    <p className="text-green-600 text-sm">
+                      ✅ You hit last week's focus: Log consistently. Nice work!
+                    </p>
+                  </div>
+                  
+                  {/* Weekly theme indicator */}
+                  <div className="flex items-center gap-2 text-sm text-green-600">
+                    <span>🏷️ Theme: {analysis.overspendingCategory ? 'Spending Awareness' : analysis.missedDays >= 2 ? 'Logging Consistency' : 'Savings Challenge'}</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -452,7 +583,7 @@ const RecommendationsPage = () => {
               </CardContent>
             </Card>
 
-            {/* 5. Savings Breakdown */}
+            {/* 5. Enhanced Savings Breakdown with negative value support */}
             <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
               <CardHeader>
                 <CardTitle className="text-[#102c54] flex items-center gap-2 text-xl">
@@ -464,15 +595,32 @@ const RecommendationsPage = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between text-lg font-medium">
                     <span>Savings Goal: د.إ{analysis.savingsGoal.toFixed(2)}</span>
-                    <span>Actual Savings: د.إ{analysis.actualSavings.toFixed(2)}</span>
+                    <span className={analysis.actualSavings >= 0 ? 'text-green-600' : 'text-red-600'}>
+                      Actual Savings: د.إ{analysis.actualSavings.toFixed(2)}
+                    </span>
                   </div>
+                  {analysis.actualSavings < 0 && (
+                    <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+                      <p className="text-red-700 text-sm">
+                        ⚠️ Your expenses exceeded your income this month. Focus on reducing spending to get back on track.
+                      </p>
+                    </div>
+                  )}
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={savingsChartData}>
                         <XAxis dataKey="name" />
                         <YAxis />
-                        <Tooltip formatter={(value) => [`د.إ${Number(value).toFixed(2)}`, '']} />
-                        <Bar dataKey="value" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                        <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" />
+                        <Tooltip 
+                          formatter={(value) => [`د.إ${Number(value).toFixed(2)}`, '']}
+                          labelFormatter={(label) => label}
+                        />
+                        <Bar 
+                          dataKey="value" 
+                          radius={[4, 4, 0, 0]}
+                          fill={(entry) => entry?.fill || '#22c55e'}
+                        />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>

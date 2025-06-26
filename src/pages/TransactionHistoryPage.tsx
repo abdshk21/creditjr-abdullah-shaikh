@@ -1,97 +1,87 @@
-
-import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, TrendingUp, TrendingDown, UtensilsCrossed, Car, BookOpen, Gamepad2, Gift, DollarSign, AlertTriangle, CheckCircle, Plus } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { ArrowLeft, Search, Filter, Calendar, DollarSign, User, LogOut, Plus, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
 interface Transaction {
   id: string;
+  user_id: string;
   amount: number;
+  type: 'income' | 'expense';
   category: string;
-  type: string;
   description: string | null;
   date: string;
-  affects_score: boolean;
   created_at: string;
+  affects_score: boolean;
 }
 
 const TransactionHistoryPage = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>('all');
+  const { user } = useAuth();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [filterType, setFilterType] = useState('all');
 
-  const categories = [
-    { value: 'Food', label: 'Food', icon: UtensilsCrossed },
-    { value: 'Transport', label: 'Transport', icon: Car },
-    { value: 'Education', label: 'Education', icon: BookOpen },
-    { value: 'Entertainment', label: 'Entertainment', icon: Gamepad2 },
-    { value: 'Gifts', label: 'Gifts', icon: Gift },
-    { value: 'Misc', label: 'Misc', icon: DollarSign }
-  ];
-
-  const getCategoryIcon = (categoryValue: string) => {
-    const category = categories.find(cat => cat.value === categoryValue);
-    return category?.icon || DollarSign;
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/auth');
   };
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchTransactions();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    applyFilter();
-  }, [transactions, filter]);
-
-  const fetchTransactions = async () => {
-    try {
+  const { data: transactions = [], isLoading, error } = useQuery({
+    queryKey: ['transactions', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
-        .eq('user_id', user?.id)
-        .order('date', { ascending: false })
-        .order('created_at', { ascending: false });
-
+        .eq('user_id', user.id)
+        .order('date', { ascending: false });
+      
       if (error) {
         console.error('Error fetching transactions:', error);
-        return;
+        return [];
       }
+      
+      return data as Transaction[];
+    },
+    enabled: !!user?.id,
+  });
 
-      setTransactions(data || []);
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const filteredTransactions = transactions.filter(transaction => {
+    const searchRegex = new RegExp(searchTerm, 'i');
+    const matchesSearch = searchRegex.test(transaction.description || '') || searchRegex.test(transaction.category);
 
-  const applyFilter = () => {
-    if (filter === 'all') {
-      setFilteredTransactions(transactions);
-    } else {
-      setFilteredTransactions(transactions.filter(transaction => transaction.type === filter));
-    }
-  };
+    const matchesCategory = filterCategory === 'all' || transaction.category === filterCategory;
+    const matchesType = filterType === 'all' || transaction.type === filterType;
 
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'MMM dd, yyyy');
-  };
+    return matchesSearch && matchesCategory && matchesType;
+  });
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white p-6 pb-24">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center gap-4 mb-8">
+  const categories = [...new Set(transactions.map(t => t.category))];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 pb-24">
+      {/* Floating Add Transaction Button */}
+      <Button
+        onClick={() => navigate('/add-transaction')}
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#d8a434] hover:bg-[#d8a434]/90 text-white shadow-lg z-50"
+        size="icon"
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
+
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
             <Button
               variant="ghost"
               size="sm"
@@ -102,170 +92,102 @@ const TransactionHistoryPage = () => {
             </Button>
             <h1 className="text-3xl font-bold text-[#102c54]">Transaction History</h1>
           </div>
-          <div className="text-center text-gray-500">Loading transactions...</div>
+          <div className="flex items-center gap-3">
+            {user?.user_metadata?.avatar_url ? (
+              <img 
+                src={user.user_metadata.avatar_url} 
+                alt="Profile" 
+                className="w-10 h-10 rounded-full border-2 border-white/20 cursor-pointer hover:border-white/40 transition-all"
+                onClick={() => navigate('/my-account')}
+              />
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/my-account')}
+                className="text-[#102c54] hover:bg-gray-100 w-10 h-10 rounded-full"
+              >
+                <User className="h-5 w-5" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-[#102c54] hover:bg-gray-100 w-10 h-10 rounded-full"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className="min-h-screen bg-white p-6 pb-24">
-      <div className="max-w-2xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/')}
-            className="text-[#102c54] hover:bg-gray-100"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-3xl font-bold text-[#102c54]">Transaction History</h1>
+        {/* Search and Filters */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-1">
+            <Input
+              type="text"
+              placeholder="Search transactions..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="border-2 focus:border-[#d8a434]"
+            />
+          </div>
+          <div className="md:col-span-1">
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger className="border-2 focus:border-[#d8a434]">
+                <SelectValue placeholder="Filter by category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map(cat => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="md:col-span-1">
+            <Select value={filterType} onValueChange={setFilterType}>
+              <SelectTrigger className="border-2 focus:border-[#d8a434]">
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="income">Income</SelectItem>
+                <SelectItem value="expense">Expense</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-
-        {/* Filter */}
-        <Card className="shadow-lg border-0">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-gray-700">Filter by:</span>
-              <Select value={filter} onValueChange={setFilter}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="income">Income</SelectItem>
-                  <SelectItem value="expense">Expense</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Transaction List */}
-        <div className="space-y-4">
-          {filteredTransactions.length === 0 ? (
-            <Card className="shadow-lg border-0">
-              <CardContent className="p-8 text-center">
-                <div className="text-gray-500 text-lg">
-                  {filter === 'all' ? 'No transactions found' : `No ${filter} transactions found`}
-                </div>
-                <div className="text-gray-400 text-sm mt-2">
-                  {filter === 'all' ? 'Start by adding your first transaction!' : `Try a different filter or add some ${filter} transactions.`}
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredTransactions.map((transaction) => {
-              const CategoryIcon = getCategoryIcon(transaction.category);
-              const isIncome = transaction.type === 'income';
-              const hasNegativeScoreImpact = transaction.type === 'expense' && transaction.affects_score;
-              
-              return (
-                <Card key={transaction.id} className="shadow-lg border-0 hover:shadow-xl transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      {/* Left side - Icon, Category, Date, Description */}
-                      <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-full ${
-                          isIncome ? 'bg-green-100' : 'bg-red-100'
-                        }`}>
-                          <CategoryIcon className={`h-6 w-6 ${
-                            isIncome ? 'text-green-600' : 'text-red-600'
-                          }`} />
-                        </div>
-                        
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-1">
-                            <span className="font-semibold text-lg text-[#102c54]">
-                              {transaction.category}
-                            </span>
-                            <Badge 
-                              variant={isIncome ? "default" : "destructive"}
-                              className={`text-xs font-medium ${
-                                isIncome 
-                                  ? 'bg-green-100 text-green-700 hover:bg-green-100' 
-                                  : 'bg-red-100 text-red-700 hover:bg-red-100'
-                              }`}
-                            >
-                              {isIncome ? (
-                                <><TrendingUp className="h-3 w-3 mr-1" /> Income</>
-                              ) : (
-                                <><TrendingDown className="h-3 w-3 mr-1" /> Expense</>
-                              )}
-                            </Badge>
-                          </div>
-                          
-                          <div className="text-sm text-gray-500 mb-1">
-                            {formatDate(transaction.date)}
-                          </div>
-                          
-                          {transaction.description && (
-                            <div className="text-sm text-gray-600 italic">
-                              "{transaction.description}"
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Right side - Amount and Score Impact */}
-                      <div className="text-right">
-                        <div className={`text-2xl font-bold mb-2 ${
-                          isIncome ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {isIncome ? '+' : '-'}د.إ {Math.abs(transaction.amount).toFixed(2)}
-                        </div>
-                        
-                        <div className="flex items-center justify-end gap-1">
-                          {hasNegativeScoreImpact ? (
-                            <>
-                              <AlertTriangle className="h-4 w-4 text-orange-500" />
-                              <span className="text-xs text-orange-500 font-medium">Affects Score</span>
-                            </>
-                          ) : isIncome ? (
-                            <>
-                              <CheckCircle className="h-4 w-4 text-green-500" />
-                              <span className="text-xs text-green-500 font-medium">Positive Impact</span>
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="h-4 w-4 text-gray-400" />
-                              <span className="text-xs text-gray-400 font-medium">No Score Impact</span>
-                            </>
-                          )}
-                        </div>
+        <Card className="shadow-lg border-0">
+          <CardHeader className="bg-[#102c54] text-white rounded-t-lg">
+            <CardTitle className="text-xl">Transactions</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            {isLoading && <div className="text-center">Loading transactions...</div>}
+            {error && <div className="text-center text-red-500">Error: {error.message}</div>}
+            {filteredTransactions.length === 0 && !isLoading && !error ? (
+              <div className="text-center">No transactions found.</div>
+            ) : (
+              <div className="space-y-3">
+                {filteredTransactions.map(transaction => (
+                  <div key={transaction.id} className="flex items-center justify-between p-4 rounded-md shadow-sm border">
+                    <div>
+                      <div className="font-semibold">{transaction.description || 'No Description'}</div>
+                      <div className="text-sm text-gray-500">
+                        {transaction.category} • {format(new Date(transaction.date), 'PPP')}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })
-          )}
-        </div>
-
-        {/* Summary */}
-        {filteredTransactions.length > 0 && (
-          <Card className="shadow-lg border-0 bg-gray-50">
-            <CardContent className="p-6">
-              <div className="text-center">
-                <div className="text-sm text-gray-600 mb-2">
-                  {filter === 'all' ? 'Total Transactions' : `Total ${filter.charAt(0).toUpperCase() + filter.slice(1)} Transactions`}
-                </div>
-                <div className="text-2xl font-bold text-[#102c54]">{filteredTransactions.length}</div>
+                    <div className={`font-bold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                      {transaction.type === 'income' ? '+' : '-'}د.إ{transaction.amount.toFixed(2)}
+                    </div>
+                  </div>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Floating Add Button */}
-        <Button
-          onClick={() => navigate('/add-transaction')}
-          className="fixed bottom-20 right-6 w-14 h-14 rounded-full bg-[#d8a434] hover:bg-[#d8a434]/90 text-white shadow-lg hover:shadow-xl transition-all duration-300 z-50"
-          size="icon"
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
