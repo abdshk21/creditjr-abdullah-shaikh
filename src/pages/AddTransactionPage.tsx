@@ -9,7 +9,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
-import { CalendarIcon, ArrowLeft, UtensilsCrossed, Car, BookOpen, Gamepad2, Gift, DollarSign, Wallet, Briefcase, Award, ShoppingBag, Coins } from 'lucide-react';
+import { CalendarIcon, ArrowLeft, UtensilsCrossed, Car, BookOpen, Gamepad2, Gift, DollarSign, Wallet, Briefcase, Trophy, ShoppingBag, Users, Coins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -29,6 +29,7 @@ const AddTransactionPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
+  // Dynamic categories based on transaction type
   const expenseCategories = [
     { value: 'Food', label: 'Food', icon: UtensilsCrossed },
     { value: 'Transport', label: 'Transport', icon: Car },
@@ -43,17 +44,22 @@ const AddTransactionPage = () => {
     { value: 'Gift', label: 'Gift', icon: Gift },
     { value: 'Freelance', label: 'Freelance', icon: Briefcase },
     { value: 'Allowance', label: 'Allowance', icon: DollarSign },
-    { value: 'Bonus', label: 'Bonus', icon: Award },
+    { value: 'Bonus', label: 'Bonus', icon: Trophy },
     { value: 'Sale', label: 'Sale', icon: ShoppingBag },
     { value: 'Other Income', label: 'Other Income', icon: Coins }
   ];
 
-  const currentCategories = type === 'income' ? incomeCategories : expenseCategories;
+  // Get categories based on selected type
+  const categories = type === 'income' ? incomeCategories : expenseCategories;
 
-  // Reset category when type changes
+  // Clear category when type changes if it's not valid for the new type
   const handleTypeChange = (newType: 'income' | 'expense') => {
     setType(newType);
-    setCategory(''); // Reset category selection
+    const newCategories = newType === 'income' ? incomeCategories : expenseCategories;
+    const categoryExists = newCategories.some(cat => cat.value === category);
+    if (!categoryExists) {
+      setCategory('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -196,10 +202,10 @@ const AddTransactionPage = () => {
                 <Label className="text-base font-semibold text-[#102c54]">Category *</Label>
                 <Select value={category} onValueChange={setCategory} required>
                   <SelectTrigger className="border-2 focus:border-[#d8a434]">
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue placeholder={`Select ${type} category`} />
                   </SelectTrigger>
                   <SelectContent className="bg-white border-2">
-                    {currentCategories.map((cat) => {
+                    {categories.map((cat) => {
                       const Icon = cat.icon;
                       return (
                         <SelectItem key={cat.value} value={cat.value}>
