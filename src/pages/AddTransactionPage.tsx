@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { Confetti } from '@/components/Confetti';
 
 const AddTransactionPage = () => {
   const { user } = useAuth();
@@ -25,6 +27,7 @@ const AddTransactionPage = () => {
   const [description, setDescription] = useState('');
   const [date, setDate] = useState<Date>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const categories = [
     { value: 'Food', label: 'Food', icon: UtensilsCrossed },
@@ -62,15 +65,32 @@ const AddTransactionPage = () => {
 
       if (error) {
         console.error('Error inserting transaction:', error);
-        toast.error('Failed to save transaction');
+        toast.error('Failed to save transaction: ' + error.message);
         return;
       }
 
-      toast.success('Transaction saved successfully!');
-      navigate('/');
+      // Clear form
+      setAmount('');
+      setCategory('');
+      setDescription('');
+      setDate(new Date());
+
+      if (type === 'income') {
+        // Show confetti for income
+        setShowConfetti(true);
+        toast.success('Nice! You earned some extra د.إ today! 🎉');
+        setTimeout(() => setShowConfetti(false), 3000);
+      } else {
+        toast.success('✅ Transaction saved!');
+      }
+
+      // Navigate back after a short delay
+      setTimeout(() => {
+        navigate('/');
+      }, 1500);
     } catch (error) {
       console.error('Error saving transaction:', error);
-      toast.error('Failed to save transaction');
+      toast.error('Failed to save transaction. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -78,6 +98,8 @@ const AddTransactionPage = () => {
 
   return (
     <div className="min-h-screen bg-white p-6 pb-24">
+      {showConfetti && <Confetti />}
+      
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
