@@ -15,16 +15,16 @@ const BottomNavigation = () => {
       path: '/'
     },
     {
-      id: 'goal',
-      label: 'Goal',
-      icon: Target,
-      path: '/set-goal'
-    },
-    {
       id: 'history',
       label: 'History',
       icon: History,
       path: '/transaction-history'
+    },
+    {
+      id: 'goal',
+      label: 'Goal',
+      icon: Target,
+      path: '/set-goal'
     },
     {
       id: 'score',
