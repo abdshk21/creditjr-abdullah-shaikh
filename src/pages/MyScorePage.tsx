@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Award, ArrowLeft, RefreshCw, TrendingUp } from 'lucide-react';
+import { Award, ArrowLeft, RefreshCw, TrendingUp, User, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -34,6 +34,64 @@ interface CreditScoreData {
   breakdown: CreditScoreBreakdown;
   last_calculated: string;
 }
+
+// Semi-circle gauge component
+const SemiCircleGauge = ({ score, size = 200 }: { score: number; size?: number }) => {
+  const getScoreColor = (score: number) => {
+    if (score >= 740) return '#22c55e'; // green
+    if (score >= 670) return '#3b82f6'; // blue
+    if (score >= 580) return '#eab308'; // yellow
+    if (score >= 500) return '#f97316'; // orange
+    return '#ef4444'; // red
+  };
+
+  const getScoreLabel = (score: number) => {
+    if (score >= 740) return 'EXCELLENT';
+    if (score >= 670) return 'GOOD';
+    if (score >= 580) return 'FAIR';
+    return 'POOR';
+  };
+
+  const radius = size / 2 - 20;
+  const circumference = Math.PI * radius;
+  const strokeDasharray = circumference;
+  const strokeDashoffset = circumference - (score - 300) / 550 * circumference;
+
+  return (
+    <div className="relative" style={{ width: size, height: size / 2 + 40 }}>
+      <svg width={size} height={size / 2 + 40} className="transform rotate-0">
+        {/* Background arc */}
+        <path
+          d={`M 20 ${size / 2} A ${radius} ${radius} 0 0 1 ${size - 20} ${size / 2}`}
+          fill="none"
+          stroke="#e5e7eb"
+          strokeWidth="12"
+          strokeLinecap="round"
+        />
+        {/* Score arc */}
+        <path
+          d={`M 20 ${size / 2} A ${radius} ${radius} 0 0 1 ${size - 20} ${size / 2}`}
+          fill="none"
+          stroke={getScoreColor(score)}
+          strokeWidth="12"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          className="transition-all duration-1000 ease-out"
+        />
+      </svg>
+      {/* Score text */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="text-4xl font-bold" style={{ color: getScoreColor(score) }}>
+          {score}
+        </div>
+        <div className="text-sm font-medium text-gray-600 mt-1">
+          {getScoreLabel(score)}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const MyScorePage = () => {
   const navigate = useNavigate();
@@ -105,12 +163,24 @@ const MyScorePage = () => {
         return null;
       }
       
-      return data as CreditScoreData;
+      // Safely handle the Json type from Supabase
+      const breakdown = data.breakdown as any;
+      return {
+        ...data,
+        breakdown: breakdown && typeof breakdown === 'object' && !Array.isArray(breakdown) 
+          ? breakdown as CreditScoreBreakdown
+          : { spendingControl: 50, savingsProgress: 50, loggingConsistency: 50 }
+      } as CreditScoreData;
     },
     enabled: !!user?.id,
   });
 
-  // Calculate virtual credit score
+  // Logout function
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/auth');
+  };
+
   const calculateCreditScore = () => {
     if (!transactions.length) return { score: 650, breakdown: { savingsProgress: 20, spendingControl: 30, loggingConsistency: 50 } };
 
@@ -192,19 +262,6 @@ const MyScorePage = () => {
 
   const breakdown = getBreakdown();
 
-  // Get score color and emoji
-  const getScoreColor = (score: number) => {
-    if (score >= 700) return 'text-green-600';
-    if (score >= 500) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const getScoreEmoji = (score: number) => {
-    if (score >= 700) return '🎉';
-    if (score >= 500) return '👍';
-    return '💪';
-  };
-
   // Handle recalculate
   const handleRecalculate = async () => {
     if (!user?.id) return;
@@ -247,21 +304,53 @@ const MyScorePage = () => {
   return (
     <div className="min-h-screen bg-white p-6 pb-24">
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/')}
-            className="text-[#102c54] hover:bg-gray-100"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-3xl font-bold text-[#102c54]">Your Virtual Credit Score</h1>
+        {/* Header with branding and account */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/')}
+              className="text-[#102c54] hover:bg-gray-100"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex items-center gap-3">
+              <img 
+                src="/lovable-uploads/ce9c86db-4914-4c0d-8753-b431569de422.png" 
+                alt="Tyche Online Academy" 
+                className="w-10 h-10 rounded-full"
+              />
+              <div>
+                <h1 className="text-2xl font-bold text-[#102c54]">CreditJr</h1>
+                <p className="text-sm text-gray-600">By Tyche Online Academy</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/my-account')}
+              className="text-[#102c54] hover:bg-gray-100"
+            >
+              <User className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-[#102c54] hover:bg-gray-100"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
-        {/* Score Display */}
-        <Card className="shadow-lg border-0">
+        <h2 className="text-2xl font-bold text-[#102c54]">Your Virtual Credit Score</h2>
+
+        {/* Score Display with Semi-Circle Gauge */}
+        <Card className="shadow-lg border-0 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
           <CardHeader className="bg-[#d8a434] text-white rounded-t-lg">
             <CardTitle className="text-xl flex items-center gap-3">
               <Award className="h-6 w-6" />
@@ -270,12 +359,7 @@ const MyScorePage = () => {
           </CardHeader>
           <CardContent className="p-8 text-center">
             <div className="space-y-4">
-              <div className={`text-6xl font-bold ${getScoreColor(currentScore)}`}>
-                {currentScore} {getScoreEmoji(currentScore)}
-              </div>
-              <div className="text-lg text-gray-600">
-                {currentScore >= 700 ? 'Excellent' : currentScore >= 500 ? 'Good' : 'Needs Improvement'}
-              </div>
+              <SemiCircleGauge score={currentScore} size={280} />
               {creditScore?.last_calculated && (
                 <div className="text-sm text-gray-500">
                   Last updated: {format(new Date(creditScore.last_calculated), 'MMM dd, yyyy at h:mm a')}
@@ -286,7 +370,7 @@ const MyScorePage = () => {
         </Card>
 
         {/* Breakdown Section */}
-        <Card className="shadow-lg border-0">
+        <Card className="shadow-lg border-0 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
           <CardHeader>
             <CardTitle className="text-[#102c54] flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
@@ -319,7 +403,7 @@ const MyScorePage = () => {
               {/* Breakdown Details */}
               <div className="space-y-4">
                 {chartData.map((item) => (
-                  <div key={item.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={item.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div className="flex items-center gap-3">
                       <div 
                         className="w-4 h-4 rounded-full" 
@@ -336,7 +420,7 @@ const MyScorePage = () => {
         </Card>
 
         {/* Recalculate Button */}
-        <Card className="shadow-lg border-0">
+        <Card className="shadow-lg border-0 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
           <CardContent className="p-6 text-center">
             <Button
               onClick={handleRecalculate}

@@ -1,11 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Lightbulb, ArrowLeft, TrendingUp, Target, Calendar, Award } from 'lucide-react';
+import { Lightbulb, ArrowLeft, TrendingUp, Target, Calendar, Award, User, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import FinanceCoachChat from '@/components/FinanceCoachChat';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis } from 'recharts';
 
 interface Transaction {
   id: string;
@@ -27,9 +28,73 @@ interface CreditScoreData {
   last_calculated: string;
 }
 
+// Semi-circle gauge component
+const SemiCircleGauge = ({ score, size = 200 }: { score: number; size?: number }) => {
+  const getScoreColor = (score: number) => {
+    if (score >= 740) return '#22c55e'; // green
+    if (score >= 670) return '#3b82f6'; // blue
+    if (score >= 580) return '#eab308'; // yellow
+    if (score >= 500) return '#f97316'; // orange
+    return '#ef4444'; // red
+  };
+
+  const getScoreLabel = (score: number) => {
+    if (score >= 740) return 'EXCELLENT';
+    if (score >= 670) return 'GOOD';
+    if (score >= 580) return 'FAIR';
+    return 'POOR';
+  };
+
+  const radius = size / 2 - 20;
+  const circumference = Math.PI * radius;
+  const strokeDasharray = circumference;
+  const strokeDashoffset = circumference - (score - 300) / 550 * circumference;
+
+  return (
+    <div className="relative" style={{ width: size, height: size / 2 + 40 }}>
+      <svg width={size} height={size / 2 + 40} className="transform rotate-0">
+        {/* Background arc */}
+        <path
+          d={`M 20 ${size / 2} A ${radius} ${radius} 0 0 1 ${size - 20} ${size / 2}`}
+          fill="none"
+          stroke="#e5e7eb"
+          strokeWidth="12"
+          strokeLinecap="round"
+        />
+        {/* Score arc */}
+        <path
+          d={`M 20 ${size / 2} A ${radius} ${radius} 0 0 1 ${size - 20} ${size / 2}`}
+          fill="none"
+          stroke={getScoreColor(score)}
+          strokeWidth="12"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          className="transition-all duration-1000 ease-out"
+        />
+      </svg>
+      {/* Score text */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="text-3xl font-bold" style={{ color: getScoreColor(score) }}>
+          {score}
+        </div>
+        <div className="text-sm font-medium text-gray-600 mt-1">
+          {getScoreLabel(score)}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const RecommendationsPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // Logout function
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/auth');
+  };
 
   // Fetch transactions
   const { data: transactions = [] } = useQuery({
@@ -123,7 +188,7 @@ const RecommendationsPage = () => {
     const totalSpending = monthlyTransactions
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + Number(t.amount), 0);
-
+    
     const totalIncome = monthlyTransactions
       .filter(t => t.type === 'income')
       .reduce((sum, t) => sum + Number(t.amount), 0);
@@ -234,139 +299,181 @@ const RecommendationsPage = () => {
 
   const feedback = generateCoachFeedback();
 
+  // Prepare chart data
+  const categoryChartData = Object.entries(analysis.categoryBreakdown).map(([category, amount]) => ({
+    name: category,
+    value: amount,
+    color: `#${Math.floor(Math.random()*16777215).toString(16)}`
+  }));
+
+  const savingsChartData = [
+    { name: 'Saved', value: analysis.actualSavings, color: '#22c55e' },
+    { name: 'Goal Remaining', value: Math.max(0, analysis.savingsGoal - analysis.actualSavings), color: '#e5e7eb' }
+  ];
+
   return (
     <div className="min-h-screen bg-white p-6 pb-24">
-      <div className="max-w-2xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/')}
-            className="text-[#102c54] hover:bg-gray-100"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-3xl font-bold text-[#102c54]">Your AI Finance Coach</h1>
+      <div className="max-w-7xl mx-auto">
+        {/* Header with branding and account */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/')}
+              className="text-[#102c54] hover:bg-gray-100"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex items-center gap-3">
+              <img 
+                src="/lovable-uploads/ce9c86db-4914-4c0d-8753-b431569de422.png" 
+                alt="Tyche Online Academy" 
+                className="w-10 h-10 rounded-full"
+              />
+              <div>
+                <h1 className="text-2xl font-bold text-[#102c54]">CreditJr</h1>
+                <p className="text-sm text-gray-600">By Tyche Online Academy</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/my-account')}
+              className="text-[#102c54] hover:bg-gray-100"
+            >
+              <User className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-[#102c54] hover:bg-gray-100"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
-        {/* Chat with Coach Section */}
-        <FinanceCoachChat />
+        <h2 className="text-2xl font-bold text-[#102c54] mb-6">Your AI Finance Coach</h2>
 
-        {/* Overall Summary */}
-        <Card className="shadow-lg border-0">
-          <CardHeader className="bg-[#d8a434] text-white rounded-t-lg">
-            <CardTitle className="text-xl flex items-center gap-3">
-              <Lightbulb className="h-6 w-6" />
-              How You're Doing Overall
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <p className="text-lg">{feedback.overallSummary}</p>
-          </CardContent>
-        </Card>
+        {/* Split Layout: Left 70% Overview, Right 30% Chat */}
+        <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
+          {/* Left Side: Overview Panel (70%) */}
+          <div className="lg:col-span-7 space-y-6">
+            {/* 1. Credit Score */}
+            <Card className="shadow-lg border-0 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
+              <CardHeader className="bg-[#d8a434] text-white rounded-t-lg">
+                <CardTitle className="text-xl flex items-center gap-3">
+                  <Award className="h-6 w-6" />
+                  Current Credit Score
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 text-center">
+                <SemiCircleGauge score={feedback.newScore} size={240} />
+              </CardContent>
+            </Card>
 
-        {/* Spending Analysis */}
-        <Card className="shadow-lg border-0">
-          <CardHeader>
-            <CardTitle className="text-[#102c54] flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Spending Breakdown
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-600">Monthly Allowance:</span>
-                <p className="font-semibold">${analysis.monthlyAllowance.toFixed(2)}</p>
-              </div>
-              <div>
-                <span className="text-gray-600">Total Spending:</span>
-                <p className="font-semibold text-red-600">${analysis.totalSpending.toFixed(2)}</p>
-              </div>
-            </div>
-            
-            {feedback.overspendingCategories.length > 0 && (
-              <div className="bg-orange-50 p-4 rounded-lg">
-                <h4 className="font-medium text-orange-800 mb-2">⚠️ Categories to Watch:</h4>
-                {feedback.overspendingCategories.map(({ category, amount }) => (
-                  <p key={category} className="text-sm text-orange-700">
-                    {category}: ${amount.toFixed(2)}
-                  </p>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            {/* 2. How You're Doing Overall */}
+            <Card className="shadow-lg border-0 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
+              <CardHeader>
+                <CardTitle className="text-[#102c54] flex items-center gap-2">
+                  <Lightbulb className="h-5 w-5" />
+                  How You're Doing Overall
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-lg">{feedback.overallSummary}</p>
+              </CardContent>
+            </Card>
 
-        {/* Savings Progress */}
-        <Card className="shadow-lg border-0">
-          <CardHeader>
-            <CardTitle className="text-[#102c54] flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              Savings Progress
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-600">Savings Goal:</span>
-                <p className="font-semibold">${analysis.savingsGoal.toFixed(2)}</p>
-              </div>
-              <div>
-                <span className="text-gray-600">Actual Savings:</span>
-                <p className={`font-semibold ${analysis.actualSavings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  ${analysis.actualSavings.toFixed(2)}
-                </p>
-              </div>
-            </div>
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-blue-800">{feedback.savingsEvaluation}</p>
-            </div>
-          </CardContent>
-        </Card>
+            {/* 3. This Week's Focus */}
+            <Card className="shadow-lg border-0 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
+              <CardHeader>
+                <CardTitle className="text-[#102c54] flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  This Week's Focus
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-green-800 mb-2">💡 Your Action Item:</h4>
+                  <p className="text-green-700">{feedback.improvement}</p>
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Updated Credit Score */}
-        <Card className="shadow-lg border-0">
-          <CardHeader>
-            <CardTitle className="text-[#102c54] flex items-center gap-2">
-              <Award className="h-5 w-5" />
-              Updated Virtual Credit Score
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <div className={`text-5xl font-bold ${
-              feedback.newScore >= 700 ? 'text-green-600' : 
-              feedback.newScore >= 500 ? 'text-yellow-600' : 'text-red-600'
-            }`}>
-              {feedback.newScore}
-            </div>
-            <div className="text-sm text-gray-600">
-              Previous: {analysis.lastScore} | Change: {feedback.newScore > analysis.lastScore ? '+' : ''}{feedback.newScore - analysis.lastScore}
-            </div>
-          </CardContent>
-        </Card>
+            {/* 4. Spending Breakdown */}
+            <Card className="shadow-lg border-0 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
+              <CardHeader>
+                <CardTitle className="text-[#102c54] flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Spending Breakdown
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {categoryChartData.length > 0 ? (
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={categoryChartData}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          dataKey="value"
+                        >
+                          {categoryChartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, '']} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-8">No spending data this month</p>
+                )}
+              </CardContent>
+            </Card>
 
-        {/* Weekly Improvement */}
-        <Card className="shadow-lg border-0">
-          <CardHeader>
-            <CardTitle className="text-[#102c54] flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              This Week's Focus
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h4 className="font-medium text-green-800 mb-2">💡 Your Action Item:</h4>
-              <p className="text-green-700">{feedback.improvement}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-medium text-[#102c54]">
-                You've got this! Every small step counts toward building lifelong financial confidence. 🚀
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+            {/* 5. Savings Breakdown */}
+            <Card className="shadow-lg border-0 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
+              <CardHeader>
+                <CardTitle className="text-[#102c54] flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Savings Progress
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between text-sm">
+                    <span>Savings Goal: ${analysis.savingsGoal.toFixed(2)}</span>
+                    <span>Actual Savings: ${analysis.actualSavings.toFixed(2)}</span>
+                  </div>
+                  <div className="h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={savingsChartData}>
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, '']} />
+                        <Bar dataKey="value" fill="#22c55e" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Side: Chat Interface (30%) */}
+          <div className="lg:col-span-3">
+            <FinanceCoachChat />
+          </div>
+        </div>
       </div>
     </div>
   );

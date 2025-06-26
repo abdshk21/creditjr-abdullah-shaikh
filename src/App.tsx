@@ -13,6 +13,7 @@ import TransactionHistoryPage from "./pages/TransactionHistoryPage";
 import SetGoalPage from "./pages/SetGoalPage";
 import MyScorePage from "./pages/MyScorePage";
 import RecommendationsPage from "./pages/RecommendationsPage";
+import MyAccountPage from "./pages/MyAccountPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,6 +60,12 @@ const App = () => (
               <Route path="/recommendations" element={
                 <ProtectedRoute>
                   <RecommendationsPage />
+                  <BottomNavigation />
+                </ProtectedRoute>
+              } />
+              <Route path="/my-account" element={
+                <ProtectedRoute>
+                  <MyAccountPage />
                   <BottomNavigation />
                 </ProtectedRoute>
               } />

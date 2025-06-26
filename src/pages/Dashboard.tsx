@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Plus, DollarSign, TrendingUp, TrendingDown, Target, UtensilsCrossed, ShoppingBag, Gamepad2, Car, BookOpen, Briefcase, PiggyBank } from 'lucide-react';
+import { Plus, DollarSign, TrendingUp, TrendingDown, Target, UtensilsCrossed, ShoppingBag, Gamepad2, Car, BookOpen, Briefcase, PiggyBank, User, LogOut } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 
 interface Transaction {
   id: string;
@@ -30,11 +31,76 @@ interface Goal {
   income_expectation: number;
 }
 
+// Semi-circle gauge component
+const SemiCircleGauge = ({ score, size = 150 }: { score: number; size?: number }) => {
+  const getScoreColor = (score: number) => {
+    if (score >= 740) return '#22c55e'; // green
+    if (score >= 670) return '#3b82f6'; // blue
+    if (score >= 580) return '#eab308'; // yellow
+    if (score >= 500) return '#f97316'; // orange
+    return '#ef4444'; // red
+  };
+
+  const getScoreLabel = (score: number) => {
+    if (score >= 740) return 'EXCELLENT';
+    if (score >= 670) return 'GOOD';
+    if (score >= 580) return 'FAIR';
+    return 'POOR';
+  };
+
+  const radius = size / 2 - 15;
+  const circumference = Math.PI * radius;
+  const strokeDasharray = circumference;
+  const strokeDashoffset = circumference - (score - 300) / 550 * circumference;
+
+  return (
+    <div className="relative" style={{ width: size, height: size / 2 + 30 }}>
+      <svg width={size} height={size / 2 + 30} className="transform rotate-0">
+        {/* Background arc */}
+        <path
+          d={`M 15 ${size / 2} A ${radius} ${radius} 0 0 1 ${size - 15} ${size / 2}`}
+          fill="none"
+          stroke="#e5e7eb"
+          strokeWidth="8"
+          strokeLinecap="round"
+        />
+        {/* Score arc */}
+        <path
+          d={`M 15 ${size / 2} A ${radius} ${radius} 0 0 1 ${size - 15} ${size / 2}`}
+          fill="none"
+          stroke={getScoreColor(score)}
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          className="transition-all duration-1000 ease-out"
+        />
+      </svg>
+      {/* Score text */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="text-2xl font-bold text-white">
+          {score}
+        </div>
+        <div className="text-xs font-medium text-white/90">
+          {getScoreLabel(score)}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
+
+  // Logout function
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/auth');
+  };
 
   // Fetch transactions for current month
   const { data: transactions = [] } = useQuery({
@@ -156,32 +222,52 @@ const Dashboard = () => {
     .sort(([, a], [, b]) => b - a)
     .slice(0, 3);
 
-  // Credit score helpers
-  const getCreditScoreLabel = (score: number) => {
-    if (score >= 740) return 'Good';
-    if (score >= 670) return 'Average';
-    return 'Needs Work';
-  };
-
-  const getCreditScoreColor = (score: number) => {
-    if (score >= 740) return 'bg-green-500';
-    if (score >= 670) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
-
   return (
     <div className="min-h-screen bg-white p-6 pb-24">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
+        {/* Header with branding and account */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <img 
+              src="/lovable-uploads/ce9c86db-4914-4c0d-8753-b431569de422.png" 
+              alt="Tyche Online Academy" 
+              className="w-12 h-12 rounded-full"
+            />
+            <div>
+              <h1 className="text-3xl font-bold text-[#102c54]">CreditJr</h1>
+              <p className="text-sm text-gray-600">By Tyche Online Academy</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/my-account')}
+              className="text-[#102c54] hover:bg-gray-100"
+            >
+              <User className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-[#102c54] hover:bg-gray-100"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Financial Overview */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#102c54] mb-2">Financial Dashboard</h1>
+          <h2 className="text-2xl font-bold text-[#102c54] mb-2">Financial Dashboard</h2>
           <p className="text-gray-600">Your financial overview for {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
         </div>
 
         {/* Summary Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Monthly Allowance */}
-          <Card className="bg-[#d8a434] text-white shadow-lg">
+          <Card className="bg-[#d8a434] text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Target className="h-4 w-4" />
@@ -194,7 +280,7 @@ const Dashboard = () => {
           </Card>
 
           {/* Income Earned */}
-          <Card className="bg-green-500 text-white shadow-lg">
+          <Card className="bg-green-500 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
@@ -207,7 +293,7 @@ const Dashboard = () => {
           </Card>
 
           {/* Spent So Far */}
-          <Card className="bg-red-500 text-white shadow-lg">
+          <Card className="bg-red-500 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <TrendingDown className="h-4 w-4" />
@@ -219,25 +305,16 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Virtual Credit Score */}
-          <Card className="bg-[#102c54] text-white shadow-lg">
+          {/* Virtual Credit Score with Semi-Circle Gauge */}
+          <Card className="bg-[#102c54] text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-600 hover:to-purple-600">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <DollarSign className="h-4 w-4" />
                 Credit Score
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="text-2xl font-bold">{creditScore?.score || 650}</div>
-                <div className="text-sm opacity-90">{getCreditScoreLabel(creditScore?.score || 650)}</div>
-                <div className="w-full bg-white/20 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full ${getCreditScoreColor(creditScore?.score || 650)}`}
-                    style={{ width: `${((creditScore?.score || 650) - 300) / 550 * 100}%` }}
-                  />
-                </div>
-              </div>
+            <CardContent className="flex justify-center">
+              <SemiCircleGauge score={creditScore?.score || 650} size={120} />
             </CardContent>
           </Card>
         </div>
@@ -245,7 +322,7 @@ const Dashboard = () => {
         {/* Breakdown Panels */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top Spending Categories */}
-          <Card className="shadow-lg">
+          <Card className="shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
             <CardHeader>
               <CardTitle className="text-[#102c54] flex items-center gap-2">
                 <TrendingDown className="h-5 w-5" />
@@ -258,7 +335,7 @@ const Dashboard = () => {
                   topSpendingCategories.map(([category, amount], index) => {
                     const Icon = getCategoryIcon(category);
                     return (
-                      <div key={category} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div key={category} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
                             <Icon className="h-4 w-4 text-red-600" />
@@ -280,7 +357,7 @@ const Dashboard = () => {
           </Card>
 
           {/* Top Income Sources */}
-          <Card className="shadow-lg">
+          <Card className="shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
             <CardHeader>
               <CardTitle className="text-[#102c54] flex items-center gap-2">
                 <TrendingUp className="h-5 w-5" />
@@ -293,7 +370,7 @@ const Dashboard = () => {
                   topIncomeSources.map(([category, amount], index) => {
                     const Icon = getCategoryIcon(category);
                     return (
-                      <div key={category} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div key={category} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                             <Icon className="h-4 w-4 text-green-600" />
