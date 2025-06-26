@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { DollarSign, TrendingDown, TrendingUp, Target, Plus, CalendarDays, Award, User, LogOut, ArrowLeft } from 'lucide-react';
+import { DollarSign, TrendingDown, TrendingUp, Target, Plus, CalendarDays, Award, User, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,7 +14,6 @@ interface Expense {
   category: string;
   description: string;
   date: string;
-  type: string;
 }
 
 interface Goal {
