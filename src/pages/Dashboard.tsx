@@ -262,7 +262,9 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <CreditScoreWidget size="small" showTitle={false} />
+          <div onClick={() => navigate('/my-score')}>
+            <CreditScoreWidget size="small" showTitle={false} />
+          </div>
         </div>
 
         {/* Enhanced Charts Section */}

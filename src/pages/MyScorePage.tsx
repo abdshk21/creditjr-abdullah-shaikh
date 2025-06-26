@@ -11,6 +11,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 import Confetti from '@/components/Confetti';
 import FloatingAddButton from '@/components/FloatingAddButton';
 import CreditScoreWidget from '@/components/CreditScoreWidget';
+import ScoreBreakdown from '@/components/ScoreBreakdown';
 import { useCreditScore } from '@/hooks/useCreditScore';
 
 interface Transaction {
@@ -194,7 +195,7 @@ const MyScorePage = () => {
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         {/* Enhanced Header with Gradient Background */}
         <div className="bg-gradient-to-r from-[#102c54] via-[#1e3a72] to-[#2d4f8a] rounded-lg p-6 shadow-lg">
           <div className="flex items-center justify-between">
@@ -283,55 +284,61 @@ const MyScorePage = () => {
           </div>
         )}
 
-        {/* Enhanced Breakdown Section */}
-        <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
-          <CardHeader>
-            <CardTitle className="text-[#102c54] flex items-center gap-2 text-xl">
-              <TrendingUp className="h-6 w-6" />
-              Score Breakdown
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Chart */}
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={chartData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      dataKey="value"
-                    >
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [`${value}%`, '']} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              
-              {/* Breakdown Details */}
-              <div className="space-y-4">
-                {chartData.map((item) => (
-                  <div key={item.name} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg hover:from-gray-100 hover:to-gray-200 transition-all duration-200">
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="w-5 h-5 rounded-full" 
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span className="font-semibold">{item.name}</span>
+        {/* Score Display and Breakdown Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Enhanced Breakdown Section */}
+          <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
+            <CardHeader>
+              <CardTitle className="text-[#102c54] flex items-center gap-2 text-xl">
+                <TrendingUp className="h-6 w-6" />
+                Score Breakdown
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Chart */}
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={chartData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        dataKey="value"
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [`${value}%`, '']} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                
+                {/* Breakdown Details */}
+                <div className="space-y-4">
+                  {chartData.map((item) => (
+                    <div key={item.name} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg hover:from-gray-100 hover:to-gray-200 transition-all duration-200">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-5 h-5 rounded-full" 
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span className="font-semibold">{item.name}</span>
+                      </div>
+                      <span className="text-xl font-bold">{item.value}%</span>
                     </div>
-                    <span className="text-xl font-bold">{item.value}%</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* Score Breakdown Panel */}
+          <ScoreBreakdown />
+        </div>
       </div>
       
       {/* Floating Add Button */}
