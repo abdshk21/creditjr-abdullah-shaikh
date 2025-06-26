@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import Confetti from '@/components/Confetti';
 import SavingsChart from '@/components/SavingsChart';
 import FloatingAddButton from '@/components/FloatingAddButton';
+import CreditScoreWidget from '@/components/CreditScoreWidget';
 
 interface Transaction {
   id: string;
@@ -116,6 +117,7 @@ const Dashboard = () => {
   const actualSavings = Math.max(0, totalIncome - totalExpenses);
   const savingsProgress = savingsGoal > 0 ? (actualSavings / savingsGoal) * 100 : 0;
 
+  // Updated chart data to show only expenses
   const chartData = Array.from({ length: 12 }, (_, i) => {
     const month = new Date(currentYear, currentMonth - i, 1);
     const monthName = month.toLocaleString('default', { month: 'short' });
@@ -129,14 +131,9 @@ const Dashboard = () => {
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + Number(t.amount), 0);
     
-    const income = monthlyExpenses
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-
     return {
       name: monthName,
-      expenses: expenses,
-      income: income
+      expenses: expenses
     };
   }).reverse();
 
@@ -221,7 +218,7 @@ const Dashboard = () => {
 
         <h2 className="text-3xl font-bold text-[#102c54]">Your Financial Dashboard</h2>
 
-        {/* Enhanced Summary Cards with Original Colors and Currency د.إ */}
+        {/* Enhanced Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card 
             className="shadow-lg border-0 cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300 bg-gradient-to-r from-yellow-500 to-amber-600 text-white"
@@ -265,24 +262,12 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card 
-            className="shadow-lg border-0 cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300 bg-gradient-to-r from-blue-500 to-blue-600 text-white"
-            onClick={() => navigate('/my-score')}
-          >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Credit Score</CardTitle>
-              <Award className="h-4 w-4" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{creditScore}</div>
-              <p className="text-xs text-white/80">Virtual Score</p>
-            </CardContent>
-          </Card>
+          <CreditScoreWidget size="small" showTitle={false} />
         </div>
 
         {/* Enhanced Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Monthly Spending Trend */}
+          {/* Monthly Spending Trend - Fixed to show only expenses */}
           <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
             <CardHeader>
               <CardTitle className="text-[#102c54]">Monthly Spending Trend</CardTitle>
@@ -294,9 +279,8 @@ const Dashboard = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip formatter={(value) => [`د.إ${Number(value).toFixed(2)}`, 'Amount']} />
+                    <Tooltip formatter={(value) => [`د.إ${Number(value).toFixed(2)}`, 'Expenses']} />
                     <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={3} />
-                    <Line type="monotone" dataKey="income" stroke="#22c55e" strokeWidth={3} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

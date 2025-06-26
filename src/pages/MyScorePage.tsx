@@ -10,6 +10,8 @@ import { format } from 'date-fns';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import Confetti from '@/components/Confetti';
 import FloatingAddButton from '@/components/FloatingAddButton';
+import CreditScoreWidget from '@/components/CreditScoreWidget';
+import { useCreditScore } from '@/hooks/useCreditScore';
 
 interface Transaction {
   id: string;
@@ -101,89 +103,21 @@ const MyScorePage = () => {
   const [showWarning, setShowWarning] = useState(false);
   const [previousScore, setPreviousScore] = useState<number | null>(null);
 
-  // Fetch transactions
-  const { data: transactions = [], refetch: refetchTransactions } = useQuery({
-    queryKey: ['transactions', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching transactions:', error);
-        return [];
-      }
-      
-      return data as Transaction[];
-    },
-    enabled: !!user?.id,
-  });
-
-  // Fetch goals
-  const { data: goals } = useQuery({
-    queryKey: ['goals', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      
-      const { data, error } = await supabase
-        .from('goals')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching goals:', error);
-        return null;
-      }
-      
-      return data as Goal;
-    },
-    enabled: !!user?.id,
-  });
-
-  // Fetch credit score
-  const { data: creditScore, refetch: refetchCreditScore } = useQuery({
-    queryKey: ['creditScore', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      
-      const { data, error } = await supabase
-        .from('credit_score')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching credit score:', error);
-        return null;
-      }
-      
-      // Safely handle the Json type from Supabase
-      const breakdown = data.breakdown as any;
-      return {
-        ...data,
-        breakdown: breakdown && typeof breakdown === 'object' && !Array.isArray(breakdown) 
-          ? breakdown as CreditScoreBreakdown
-          : { spendingControl: 50, savingsProgress: 50, loggingConsistency: 50 }
-      } as CreditScoreData;
-    },
-    enabled: !!user?.id,
-  });
+  const { 
+    currentScore, 
+    breakdown, 
+    getScoreColor, 
+    getScoreLabel, 
+    recalculateScore, 
+    creditScore 
+  } = useCreditScore();
 
   // Store the current score as previous when component mounts
   useEffect(() => {
-    if (creditScore?.score && previousScore === null) {
-      setPreviousScore(creditScore.score);
+    if (currentScore && previousScore === null) {
+      setPreviousScore(currentScore);
     }
-  }, [creditScore?.score, previousScore]);
+  }, [currentScore, previousScore]);
 
   // Logout function
   const handleLogout = async () => {
@@ -191,127 +125,31 @@ const MyScorePage = () => {
     navigate('/auth');
   };
 
-  const calculateCreditScore = () => {
-    if (!transactions.length) return { score: 650, breakdown: { savingsProgress: 20, spendingControl: 30, loggingConsistency: 50 } };
-
-    let score = 650; // Starting score
-    
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-    
-    const monthlyTransactions = transactions.filter(transaction => {
-      const transactionDate = new Date(transaction.date);
-      return transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear;
-    });
-
-    const totalSpent = monthlyTransactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-    
-    const totalIncome = monthlyTransactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-    
-    const monthlyBudget = goals?.income_expectation || totalIncome || 1000;
-    const savingsGoal = goals?.monthly_saving_goal || 0;
-    
-    // Spending Control (40%)
-    const spendingRatio = totalSpent / monthlyBudget;
-    let spendingScore = 0;
-    if (spendingRatio <= 0.3) spendingScore = 100;
-    else if (spendingRatio <= 0.5) spendingScore = 80;
-    else if (spendingRatio <= 0.7) spendingScore = 60;
-    else if (spendingRatio <= 0.9) spendingScore = 40;
-    else spendingScore = 20;
-    
-    // Savings Progress (30%)
-    const actualSavings = totalIncome - totalSpent;
-    const savingsRatio = savingsGoal > 0 ? actualSavings / savingsGoal : (actualSavings > 0 ? 1 : 0);
-    let savingsScore = 0;
-    if (savingsRatio >= 1) savingsScore = 100;
-    else if (savingsRatio >= 0.8) savingsScore = 80;
-    else if (savingsRatio >= 0.6) savingsScore = 60;
-    else if (savingsRatio >= 0.4) savingsScore = 40;
-    else savingsScore = 20;
-    
-    // Logging Consistency (30%)
-    const daysWithTransactions = new Set(transactions.map(t => t.date.split('T')[0])).size;
-    const consistencyScore = Math.min(100, (daysWithTransactions / 30) * 100);
-    
-    // Calculate final score
-    score = Math.round(
-      650 + 
-      (spendingScore * 0.4 * 1.5) + 
-      (savingsScore * 0.3 * 1.5) + 
-      (consistencyScore * 0.3 * 1.5)
-    );
-    
-    return {
-      score: Math.max(300, Math.min(850, score)),
-      breakdown: {
-        spendingControl: Math.round(spendingScore),
-        savingsProgress: Math.round(savingsScore),
-        loggingConsistency: Math.round(consistencyScore)
-      }
-    };
-  };
-
-  const calculatedScore = calculateCreditScore();
-  const currentScore = creditScore?.score || calculatedScore.score;
-  
-  // Type guard to ensure breakdown is properly typed
-  const getBreakdown = (): CreditScoreBreakdown => {
-    if (creditScore?.breakdown && typeof creditScore.breakdown === 'object' && !Array.isArray(creditScore.breakdown)) {
-      const breakdown = creditScore.breakdown as any;
-      if ('spendingControl' in breakdown && 'savingsProgress' in breakdown && 'loggingConsistency' in breakdown) {
-        return breakdown as CreditScoreBreakdown;
-      }
-    }
-    return calculatedScore.breakdown;
-  };
-
-  const breakdown = getBreakdown();
-
   // Handle recalculate with score change feedback
   const handleRecalculate = async () => {
     if (!user?.id) return;
     
     setIsRecalculating(true);
-    const oldScore = creditScore?.score || calculatedScore.score;
+    const oldScore = currentScore;
     
     try {
-      const newScore = calculateCreditScore();
+      const newScore = await recalculateScore();
       
-      // Update credit score in database
-      const { error } = await supabase
-        .from('credit_score')
-        .upsert({
-          user_id: user.id,
-          score: newScore.score,
-          breakdown: newScore.breakdown,
-          last_calculated: new Date().toISOString()
-        });
-      
-      if (error) {
-        console.error('Error updating credit score:', error);
+      if (newScore) {
+        // Show feedback based on score change
+        if (newScore > oldScore) {
+          setShowConfetti(true);
+          setScoreChangeMessage("Score Up! Keep those habits going 🎉");
+          setTimeout(() => setScoreChangeMessage(''), 5000);
+        } else if (newScore < oldScore) {
+          setShowWarning(true);
+          setScoreChangeMessage("Your score dropped — check your spending or missed goals 🛑");
+          setTimeout(() => {
+            setShowWarning(false);
+            setScoreChangeMessage('');
+          }, 6000);
+        }
       }
-      
-      // Show feedback based on score change
-      if (newScore.score > oldScore) {
-        setShowConfetti(true);
-        setScoreChangeMessage("Score Up! Keep those habits going 🎉");
-        setTimeout(() => setScoreChangeMessage(''), 5000);
-      } else if (newScore.score < oldScore) {
-        setShowWarning(true);
-        setScoreChangeMessage("Your score dropped — check your spending or missed goals 🛑");
-        setTimeout(() => {
-          setShowWarning(false);
-          setScoreChangeMessage('');
-        }, 6000);
-      }
-      
-      // Refetch credit score
-      await refetchCreditScore();
     } catch (error) {
       console.error('Error recalculating score:', error);
     } finally {
@@ -418,43 +256,32 @@ const MyScorePage = () => {
         <h2 className="text-3xl font-bold text-[#102c54]">Your Virtual Credit Score</h2>
 
         {/* Enhanced Score Display with Repositioned Button */}
-        <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
-          <CardHeader className="bg-gradient-to-r from-[#d8a434] to-[#f4c430] text-white rounded-t-lg">
-            <CardTitle className="text-2xl flex items-center gap-3">
-              <Award className="h-7 w-7" />
-              Current Score
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-8 text-center">
-            <div className="space-y-6">
-              <div className="flex items-center justify-center gap-8">
-                <SemiCircleGauge score={currentScore} size={320} />
-                <Button
-                  onClick={handleRecalculate}
-                  disabled={isRecalculating}
-                  className="bg-gradient-to-r from-[#d8a434] to-[#f4c430] hover:from-[#e6b345] hover:to-[#f8d147] text-white px-6 py-3 text-lg font-semibold h-fit"
-                >
-                  {isRecalculating ? (
-                    <>
-                      <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-                      Recalculating...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-5 w-5 mr-2" />
-                      Recalculate Now
-                    </>
-                  )}
-                </Button>
-              </div>
-              {creditScore?.last_calculated && (
-                <div className="text-sm text-gray-500">
-                  Last updated: {formatLastUpdated(creditScore.last_calculated)}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center justify-center gap-8">
+          <CreditScoreWidget size="large" showTitle={true} />
+          <Button
+            onClick={handleRecalculate}
+            disabled={isRecalculating}
+            className="bg-gradient-to-r from-[#d8a434] to-[#f4c430] hover:from-[#e6b345] hover:to-[#f8d147] text-white px-6 py-3 text-lg font-semibold h-fit"
+          >
+            {isRecalculating ? (
+              <>
+                <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                Recalculating...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-5 w-5 mr-2" />
+                Recalculate Now
+              </>
+            )}
+          </Button>
+        </div>
+        
+        {creditScore?.last_calculated && (
+          <div className="text-sm text-gray-500 text-center">
+            Last updated: {formatLastUpdated(creditScore.last_calculated)}
+          </div>
+        )}
 
         {/* Enhanced Breakdown Section */}
         <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">

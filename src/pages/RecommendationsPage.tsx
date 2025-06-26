@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import LovableClaudeChat from '@/components/LovableClaudeChat';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis } from 'recharts';
 import FloatingAddButton from '@/components/FloatingAddButton';
+import CreditScoreWidget from '@/components/CreditScoreWidget';
 
 interface Transaction {
   id: string;
@@ -376,17 +377,7 @@ const RecommendationsPage = () => {
           {/* Left Side: Overview Panel (70%) */}
           <div className="lg:col-span-7 space-y-6">
             {/* 1. Credit Score */}
-            <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
-              <CardHeader className="bg-gradient-to-r from-[#d8a434] to-[#f4c430] text-white rounded-t-lg">
-                <CardTitle className="text-2xl flex items-center gap-3">
-                  <Award className="h-7 w-7" />
-                  Current Credit Score
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-8 text-center">
-                <SemiCircleGauge score={feedback.newScore} size={280} />
-              </CardContent>
-            </Card>
+            <CreditScoreWidget size="large" showTitle={true} />
 
             {/* 2. How You're Doing Overall */}
             <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
