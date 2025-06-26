@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Confetti } from '@/components/Confetti';
+import Confetti from '@/components/Confetti';
 
 const AddTransactionPage = () => {
   const { user } = useAuth();
@@ -98,7 +97,7 @@ const AddTransactionPage = () => {
 
   return (
     <div className="min-h-screen bg-white p-6 pb-24">
-      {showConfetti && <Confetti />}
+      {showConfetti && <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />}
       
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}

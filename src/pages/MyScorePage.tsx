@@ -36,19 +36,16 @@ interface CreditScoreData {
   last_calculated: string;
 }
 
-// Semi-circle gauge component
+// Semi-circle gauge component with color coding
 const SemiCircleGauge = ({ score, size = 200 }: { score: number; size?: number }) => {
   const getScoreColor = (score: number) => {
-    if (score >= 740) return '#22c55e'; // green
-    if (score >= 670) return '#3b82f6'; // blue
-    if (score >= 580) return '#eab308'; // yellow
-    if (score >= 500) return '#f97316'; // orange
-    return '#ef4444'; // red
+    if (score < 580) return '#ef4444'; // red (Poor)
+    if (score >= 580 && score < 700) return '#eab308'; // gold (Fair)
+    return '#22c55e'; // green (Good/Excellent)
   };
 
   const getScoreLabel = (score: number) => {
-    if (score >= 740) return 'EXCELLENT';
-    if (score >= 670) return 'GOOD';
+    if (score >= 700) return 'EXCELLENT';
     if (score >= 580) return 'FAIR';
     return 'POOR';
   };
@@ -328,6 +325,18 @@ const MyScorePage = () => {
     { name: 'Logging Consistency', value: breakdown.loggingConsistency, color: '#3b82f6' }
   ];
 
+  const formatLastUpdated = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Never';
+      }
+      return format(date, 'MMM dd, yyyy – h:mm a');
+    } catch (error) {
+      return 'Never';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 pb-24">
       {/* Confetti Component */}
@@ -433,7 +442,7 @@ const MyScorePage = () => {
               </div>
               {creditScore?.last_calculated && (
                 <div className="text-sm text-gray-500">
-                  Last updated: {format(new Date(creditScore.last_calculated), 'MMM dd, yyyy at h:mm a')}
+                  Last updated: {formatLastUpdated(creditScore.last_calculated)}
                 </div>
               )}
             </div>

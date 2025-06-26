@@ -1,23 +1,21 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Target, ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Target, TrendingUp, User, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
 
 const SetGoalPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [monthlyAllowance, setMonthlyAllowance] = useState('');
-  const [savingsGoal, setSavingsGoal] = useState('');
+  const [monthlySavingGoal, setMonthlySavingGoal] = useState('');
+  const [incomeExpectation, setIncomeExpectation] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch existing goals
   const { data: existingGoals } = useQuery({
@@ -47,104 +45,68 @@ const SetGoalPage = () => {
   useEffect(() => {
     if (existingGoals) {
       if (existingGoals.income_expectation) {
-        setMonthlyAllowance(existingGoals.income_expectation.toString());
+        setIncomeExpectation(existingGoals.income_expectation.toString());
       }
       if (existingGoals.monthly_saving_goal) {
-        setSavingsGoal(existingGoals.monthly_saving_goal.toString());
+        setMonthlySavingGoal(existingGoals.monthly_saving_goal.toString());
       }
     }
   }, [existingGoals]);
 
-  // Mutation to save goals
-  const saveGoalsMutation = useMutation({
-    mutationFn: async ({ allowance, savings }: { allowance: number; savings: number }) => {
-      if (!user?.id) throw new Error('User not authenticated');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!monthlySavingGoal || !incomeExpectation || !user?.id) {
+      toast.error('Please fill in all fields');
+      return;
+    }
 
-      if (existingGoals) {
-        // Update existing goals
-        const { data, error } = await supabase
-          .from('goals')
-          .update({ 
-            income_expectation: allowance,
-            monthly_saving_goal: savings,
-            last_updated: new Date().toISOString()
-          })
-          .eq('id', existingGoals.id)
-          .select()
-          .single();
-        
-        if (error) throw error;
-        return data;
-      } else {
-        // Create new goals
-        const { data, error } = await supabase
-          .from('goals')
-          .insert({
-            user_id: user.id,
-            income_expectation: allowance,
-            monthly_saving_goal: savings,
-            last_updated: new Date().toISOString()
-          })
-          .select()
-          .single();
-        
-        if (error) throw error;
-        return data;
+    const savingGoalNum = parseFloat(monthlySavingGoal);
+    const incomeNum = parseFloat(incomeExpectation);
+
+    if (savingGoalNum <= 0 || incomeNum <= 0) {
+      toast.error('Please enter valid positive amounts');
+      return;
+    }
+
+    if (savingGoalNum >= incomeNum) {
+      toast.error('Savings goal cannot be greater than or equal to expected income');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase
+        .from('goals')
+        .upsert({
+          user_id: user.id,
+          monthly_saving_goal: savingGoalNum,
+          income_expectation: incomeNum,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('Error saving goals:', error);
+        toast.error('Failed to save goals: ' + error.message);
+        return;
       }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['goals', user?.id] });
-      toast({
-        title: "Goals Updated!",
-        description: `Your monthly allowance of $${monthlyAllowance} and savings target of $${savingsGoal} have been saved.`,
-      });
-      // Navigate back to dashboard after a short delay
+
+      toast.success(`Goals Updated! Saving: ${savingGoalNum} د.إ, Income: ${incomeNum} د.إ`);
+      
       setTimeout(() => {
         navigate('/');
       }, 1500);
-    },
-    onError: (error) => {
+    } catch (error) {
       console.error('Error saving goals:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save your goals. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleSaveGoals = () => {
-    const allowance = parseFloat(monthlyAllowance);
-    const savings = parseFloat(savingsGoal);
-    
-    if (!monthlyAllowance || isNaN(allowance) || allowance <= 0) {
-      toast({
-        title: "Invalid Allowance",
-        description: "Please enter a valid monthly allowance greater than 0.",
-        variant: "destructive",
-      });
-      return;
+      toast.error('Failed to save goals. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
+  };
 
-    if (!savingsGoal || isNaN(savings) || savings <= 0) {
-      toast({
-        title: "Invalid Savings Goal",
-        description: "Please enter a valid savings target greater than 0.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (savings > allowance) {
-      toast({
-        title: "Invalid Goals",
-        description: "Your savings target should be less than or equal to your allowance.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    saveGoalsMutation.mutate({ allowance, savings });
+  const handleLogout = () => {
+    // Implement logout logic here
   };
 
   return (
@@ -184,8 +146,8 @@ const SetGoalPage = () => {
                 <Input
                   id="monthly-allowance"
                   type="number"
-                  value={monthlyAllowance}
-                  onChange={(e) => setMonthlyAllowance(e.target.value)}
+                  value={monthlySavingGoal}
+                  onChange={(e) => setMonthlySavingGoal(e.target.value)}
                   placeholder="0.00"
                   className="pl-12 text-lg h-12 border-2 border-gray-200 focus:border-[#102c54]"
                   min="0"
@@ -206,8 +168,8 @@ const SetGoalPage = () => {
                 <Input
                   id="savings-goal"
                   type="number"
-                  value={savingsGoal}
-                  onChange={(e) => setSavingsGoal(e.target.value)}
+                  value={incomeExpectation}
+                  onChange={(e) => setIncomeExpectation(e.target.value)}
                   placeholder="0.00"
                   className="pl-12 text-lg h-12 border-2 border-gray-200 focus:border-[#102c54]"
                   min="0"
@@ -223,18 +185,18 @@ const SetGoalPage = () => {
             </div>
 
             <Button
-              onClick={handleSaveGoals}
-              disabled={saveGoalsMutation.isPending || !monthlyAllowance || !savingsGoal}
+              onClick={handleSubmit}
+              disabled={isSubmitting || !monthlySavingGoal || !incomeExpectation}
               className="w-full bg-[#d8a434] hover:bg-[#d8a434]/90 text-white h-12 text-lg font-medium"
             >
-              {saveGoalsMutation.isPending ? (
+              {isSubmitting ? (
                 <div className="flex items-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   Saving...
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <Save className="h-5 w-5" />
+                  <TrendingUp className="h-5 w-5" />
                   Save Goals
                 </div>
               )}
