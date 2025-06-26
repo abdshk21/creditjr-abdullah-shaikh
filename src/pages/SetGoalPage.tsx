@@ -175,11 +175,11 @@ const SetGoalPage = () => {
             {/* Monthly Allowance Section */}
             <div className="space-y-3">
               <Label htmlFor="monthly-allowance" className="text-lg font-medium text-gray-700">
-                Monthly Allowance ($)
+                Monthly Allowance (د.إ)
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">
-                  $
+                  د.إ
                 </span>
                 <Input
                   id="monthly-allowance"
@@ -187,7 +187,7 @@ const SetGoalPage = () => {
                   value={monthlyAllowance}
                   onChange={(e) => setMonthlyAllowance(e.target.value)}
                   placeholder="0.00"
-                  className="pl-8 text-lg h-12 border-2 border-gray-200 focus:border-[#102c54]"
+                  className="pl-12 text-lg h-12 border-2 border-gray-200 focus:border-[#102c54]"
                   min="0"
                   step="0.01"
                 />
@@ -197,11 +197,11 @@ const SetGoalPage = () => {
             {/* Savings Target Section */}
             <div className="space-y-3">
               <Label htmlFor="savings-goal" className="text-lg font-medium text-gray-700">
-                Savings Target ($)
+                Savings Target (د.إ)
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">
-                  $
+                  د.إ
                 </span>
                 <Input
                   id="savings-goal"
@@ -209,7 +209,7 @@ const SetGoalPage = () => {
                   value={savingsGoal}
                   onChange={(e) => setSavingsGoal(e.target.value)}
                   placeholder="0.00"
-                  className="pl-8 text-lg h-12 border-2 border-gray-200 focus:border-[#102c54]"
+                  className="pl-12 text-lg h-12 border-2 border-gray-200 focus:border-[#102c54]"
                   min="0"
                   step="0.01"
                 />
@@ -242,8 +242,8 @@ const SetGoalPage = () => {
 
             {existingGoals && (
               <div className="text-center text-gray-600 text-sm space-y-1">
-                <div>Current allowance: ${existingGoals.income_expectation || 0}</div>
-                <div>Current savings target: ${existingGoals.monthly_saving_goal || 0}</div>
+                <div>Current allowance: د.إ{existingGoals.income_expectation || 0}</div>
+                <div>Current savings target: د.إ{existingGoals.monthly_saving_goal || 0}</div>
               </div>
             )}
           </CardContent>

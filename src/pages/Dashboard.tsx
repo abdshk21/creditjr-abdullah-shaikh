@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -213,61 +214,61 @@ const Dashboard = () => {
 
         <h2 className="text-3xl font-bold text-[#102c54]">Your Financial Dashboard</h2>
 
-        {/* Enhanced Summary Cards with Currency د.إ */}
+        {/* Enhanced Summary Cards with Original Colors and Currency د.إ */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card 
-            className="shadow-lg border-0 cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50"
+            className="shadow-lg border-0 cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300 bg-gradient-to-r from-yellow-500 to-amber-600 text-white"
             onClick={() => navigate('/set-goal')}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Monthly Allowance</CardTitle>
-              <PiggyBank className="h-4 w-4 text-muted-foreground" />
+              <PiggyBank className="h-4 w-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">د.إ{monthlyIncome.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground">Target for this month</p>
+              <p className="text-xs text-white/80">Target for this month</p>
             </CardContent>
           </Card>
 
           <Card 
-            className="shadow-lg border-0 cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50"
+            className="shadow-lg border-0 cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300 bg-gradient-to-r from-green-500 to-green-600 text-white"
             onClick={() => navigate('/transaction-history')}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Income Earned</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <TrendingUp className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">د.إ{totalIncome.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground">This month</p>
+              <div className="text-2xl font-bold">د.إ{totalIncome.toFixed(2)}</div>
+              <p className="text-xs text-white/80">This month</p>
             </CardContent>
           </Card>
 
           <Card 
-            className="shadow-lg border-0 cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50"
+            className="shadow-lg border-0 cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300 bg-gradient-to-r from-red-500 to-red-600 text-white"
             onClick={() => navigate('/transaction-history')}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Spent So Far</CardTitle>
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
+              <CreditCard className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">د.إ{totalExpenses.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground">This month</p>
+              <div className="text-2xl font-bold">د.إ{totalExpenses.toFixed(2)}</div>
+              <p className="text-xs text-white/80">This month</p>
             </CardContent>
           </Card>
 
           <Card 
-            className="shadow-lg border-0 cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50"
+            className="shadow-lg border-0 cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300 bg-gradient-to-r from-blue-500 to-blue-600 text-white"
             onClick={() => navigate('/my-score')}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Credit Score</CardTitle>
-              <Award className="h-4 w-4 text-muted-foreground" />
+              <Award className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{creditScore}</div>
-              <p className="text-xs text-muted-foreground">Virtual Score</p>
+              <div className="text-2xl font-bold">{creditScore}</div>
+              <p className="text-xs text-white/80">Virtual Score</p>
             </CardContent>
           </Card>
         </div>

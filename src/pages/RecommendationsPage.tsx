@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import ClaudeFinanceCoach from '@/components/ClaudeFinanceCoach';
+import LovableClaudeChat from '@/components/LovableClaudeChat';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis } from 'recharts';
 
 interface Transaction {
@@ -483,7 +483,7 @@ const RecommendationsPage = () => {
 
           {/* Right Side: Chat Interface (30%) */}
           <div className="lg:col-span-3">
-            <ClaudeFinanceCoach />
+            <LovableClaudeChat />
           </div>
         </div>
       </div>
