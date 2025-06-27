@@ -7,6 +7,7 @@ import { ArrowLeft, Upload, User, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import UserGreeting from '@/components/UserGreeting';
 
 const MyAccountPage = () => {
   const navigate = useNavigate();
@@ -83,14 +84,19 @@ const MyAccountPage = () => {
                 </div>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-white hover:bg-white/10 w-12 h-12 rounded-full"
-            >
-              <LogOut className="h-6 w-6" />
-            </Button>
+            <div className="flex items-center gap-4">
+              <div className="text-white">
+                <UserGreeting />
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-white hover:bg-white/10 w-12 h-12 rounded-full"
+              >
+                <LogOut className="h-6 w-6" />
+              </Button>
+            </div>
           </div>
         </div>
 

@@ -48,7 +48,15 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#102c54] to-[#1a3d6b] flex items-center justify-center p-4">
+    <div 
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{
+        backgroundImage: `url('/lovable-uploads/d0d73a79-f67b-4982-b5bf-afdf95d6b8b9.png')`,
+        backgroundRepeat: 'repeat',
+        backgroundSize: 'auto',
+        backgroundPosition: 'top left'
+      }}
+    >
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
