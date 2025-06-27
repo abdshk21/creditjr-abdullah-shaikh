@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +16,7 @@ import LearnPage from "./pages/LearnPage";
 import QuizPage from "./pages/QuizPage";
 import MyAccountPage from "./pages/MyAccountPage";
 import NotFound from "./pages/NotFound";
+import FinCharacter from "@/components/FinCharacter";
 
 const queryClient = new QueryClient();
 
@@ -33,54 +33,63 @@ const App = () => (
                 <ProtectedRoute>
                   <Dashboard />
                   <BottomNavigation />
+                  <FinCharacter />
                 </ProtectedRoute>
               } />
               <Route path="/add-transaction" element={
                 <ProtectedRoute>
                   <AddTransactionPage />
                   <BottomNavigation />
+                  <FinCharacter />
                 </ProtectedRoute>
               } />
               <Route path="/transaction-history" element={
                 <ProtectedRoute>
                   <TransactionHistoryPage />
                   <BottomNavigation />
+                  <FinCharacter />
                 </ProtectedRoute>
               } />
               <Route path="/set-goal" element={
                 <ProtectedRoute>
                   <SetGoalPage />
                   <BottomNavigation />
+                  <FinCharacter />
                 </ProtectedRoute>
               } />
               <Route path="/my-score" element={
                 <ProtectedRoute>
                   <MyScorePage />
                   <BottomNavigation />
+                  <FinCharacter />
                 </ProtectedRoute>
               } />
               <Route path="/recommendations" element={
                 <ProtectedRoute>
                   <RecommendationsPage />
                   <BottomNavigation />
+                  <FinCharacter />
                 </ProtectedRoute>
               } />
               <Route path="/learn" element={
                 <ProtectedRoute>
                   <LearnPage />
                   <BottomNavigation />
+                  <FinCharacter />
                 </ProtectedRoute>
               } />
               <Route path="/quiz" element={
                 <ProtectedRoute>
                   <QuizPage />
                   <BottomNavigation />
+                  <FinCharacter />
                 </ProtectedRoute>
               } />
               <Route path="/my-account" element={
                 <ProtectedRoute>
                   <MyAccountPage />
                   <BottomNavigation />
+                  <FinCharacter />
                 </ProtectedRoute>
               } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
