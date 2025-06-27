@@ -13,6 +13,8 @@ import TransactionHistoryPage from "./pages/TransactionHistoryPage";
 import SetGoalPage from "./pages/SetGoalPage";
 import MyScorePage from "./pages/MyScorePage";
 import RecommendationsPage from "./pages/RecommendationsPage";
+import LearnPage from "./pages/LearnPage";
+import QuizPage from "./pages/QuizPage";
 import MyAccountPage from "./pages/MyAccountPage";
 import NotFound from "./pages/NotFound";
 
@@ -60,6 +62,18 @@ const App = () => (
               <Route path="/recommendations" element={
                 <ProtectedRoute>
                   <RecommendationsPage />
+                  <BottomNavigation />
+                </ProtectedRoute>
+              } />
+              <Route path="/learn" element={
+                <ProtectedRoute>
+                  <LearnPage />
+                  <BottomNavigation />
+                </ProtectedRoute>
+              } />
+              <Route path="/quiz" element={
+                <ProtectedRoute>
+                  <QuizPage />
                   <BottomNavigation />
                 </ProtectedRoute>
               } />

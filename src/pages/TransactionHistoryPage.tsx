@@ -4,7 +4,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, TrendingUp, TrendingDown, UtensilsCrossed, Car, BookOpen, Gamepad2, Gift, DollarSign, AlertTriangle, CheckCircle, Calendar } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { ArrowLeft, TrendingUp, TrendingDown, UtensilsCrossed, Car, BookOpen, Gamepad2, Gift, DollarSign, AlertTriangle, CheckCircle, CalendarIcon, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -30,6 +32,11 @@ const TransactionHistoryPage = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
+  const [customDateRange, setCustomDateRange] = useState<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>({ from: undefined, to: undefined });
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const categories = [
     { value: 'Food', label: 'Food', icon: UtensilsCrossed },
@@ -53,7 +60,7 @@ const TransactionHistoryPage = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [transactions, filter, dateFilter]);
+  }, [transactions, filter, dateFilter, customDateRange]);
 
   const fetchTransactions = async () => {
     try {
@@ -86,25 +93,22 @@ const TransactionHistoryPage = () => {
     }
 
     // Apply date filter
-    if (dateFilter !== 'all') {
+    if (dateFilter === 'current-month') {
       const now = new Date();
-      
-      if (dateFilter === 'current-month') {
-        const monthStart = startOfMonth(now);
-        const monthEnd = endOfMonth(now);
-        filtered = filtered.filter(transaction => {
-          const transactionDate = parseISO(transaction.date);
-          return isWithinInterval(transactionDate, { start: monthStart, end: monthEnd });
+      const monthStart = startOfMonth(now);
+      const monthEnd = endOfMonth(now);
+      filtered = filtered.filter(transaction => {
+        const transactionDate = parseISO(transaction.date);
+        return isWithinInterval(transactionDate, { start: monthStart, end: monthEnd });
+      });
+    } else if (dateFilter === 'custom' && customDateRange.from && customDateRange.to) {
+      filtered = filtered.filter(transaction => {
+        const transactionDate = parseISO(transaction.date);
+        return isWithinInterval(transactionDate, { 
+          start: customDateRange.from!, 
+          end: customDateRange.to! 
         });
-      } else if (dateFilter === 'last-month') {
-        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const monthStart = startOfMonth(lastMonth);
-        const monthEnd = endOfMonth(lastMonth);
-        filtered = filtered.filter(transaction => {
-          const transactionDate = parseISO(transaction.date);
-          return isWithinInterval(transactionDate, { start: monthStart, end: monthEnd });
-        });
-      }
+      });
     }
 
     setFilteredTransactions(filtered);
@@ -125,6 +129,12 @@ const TransactionHistoryPage = () => {
     }, {} as Record<string, Transaction[]>);
 
     return Object.entries(grouped).sort(([a], [b]) => b.localeCompare(a));
+  };
+
+  const resetFilters = () => {
+    setFilter('all');
+    setDateFilter('all');
+    setCustomDateRange({ from: undefined, to: undefined });
   };
 
   const groupedTransactions = groupTransactionsByDate(filteredTransactions);
@@ -169,35 +179,111 @@ const TransactionHistoryPage = () => {
         {/* Filters */}
         <Card className="shadow-lg border-0">
           <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-700">Type:</span>
-                <Select value={filter} onValueChange={setFilter}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="income">Income</SelectItem>
-                    <SelectItem value="expense">Expense</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-gray-700">Type:</span>
+                  <Select value={filter} onValueChange={setFilter}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="income">Income</SelectItem>
+                      <SelectItem value="expense">Expense</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <CalendarIcon className="h-4 w-4 text-gray-700" />
+                  <span className="text-sm font-medium text-gray-700">Period:</span>
+                  <Select value={dateFilter} onValueChange={setDateFilter}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="current-month">This Month</SelectItem>
+                      <SelectItem value="custom">Custom Range</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              
-              <div className="flex items-center gap-3">
-                <Calendar className="h-4 w-4 text-gray-700" />
-                <span className="text-sm font-medium text-gray-700">Period:</span>
-                <Select value={dateFilter} onValueChange={setDateFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Time</SelectItem>
-                    <SelectItem value="current-month">This Month</SelectItem>
-                    <SelectItem value="last-month">Last Month</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+
+              {/* Custom Date Range Selector */}
+              {dateFilter === 'custom' && (
+                <div className="flex items-center gap-4 pt-2 border-t">
+                  <Popover open={showCalendar} onOpenChange={setShowCalendar}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-[280px] justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {customDateRange.from ? (
+                          customDateRange.to ? (
+                            <>
+                              {format(customDateRange.from, "LLL dd, y")} -{" "}
+                              {format(customDateRange.to, "LLL dd, y")}
+                            </>
+                          ) : (
+                            format(customDateRange.from, "LLL dd, y")
+                          )
+                        ) : (
+                          <span>Pick a date range</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        initialFocus
+                        mode="range"
+                        defaultMonth={customDateRange.from}
+                        selected={{
+                          from: customDateRange.from,
+                          to: customDateRange.to,
+                        }}
+                        onSelect={(range) => {
+                          setCustomDateRange({
+                            from: range?.from,
+                            to: range?.to,
+                          });
+                          if (range?.from && range?.to) {
+                            setShowCalendar(false);
+                          }
+                        }}
+                        numberOfMonths={2}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  
+                  {(customDateRange.from || customDateRange.to) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCustomDateRange({ from: undefined, to: undefined })}
+                      className="px-3"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {/* Reset Filters Button */}
+              {(filter !== 'all' || dateFilter !== 'all' || customDateRange.from || customDateRange.to) && (
+                <div className="pt-2 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={resetFilters}
+                    className="text-gray-600 hover:text-gray-800"
+                  >
+                    Reset Filters
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -317,7 +403,12 @@ const TransactionHistoryPage = () => {
             <CardContent className="p-6">
               <div className="text-center">
                 <div className="text-sm text-gray-600 mb-2">
-                  Total Transactions ({filter !== 'all' ? filter : 'all types'}, {dateFilter !== 'all' ? dateFilter.replace('-', ' ') : 'all time'})
+                  Total Transactions ({filter !== 'all' ? filter : 'all types'}, {
+                    dateFilter === 'current-month' ? 'this month' :
+                    dateFilter === 'custom' && customDateRange.from && customDateRange.to ? 
+                      `${format(customDateRange.from, 'MMM dd')} - ${format(customDateRange.to, 'MMM dd')}` :
+                    'all time'
+                  })
                 </div>
                 <div className="text-2xl font-bold text-[#102c54]">{filteredTransactions.length}</div>
               </div>
