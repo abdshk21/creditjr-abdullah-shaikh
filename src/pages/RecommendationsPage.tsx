@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, User, LogOut, Lightbulb, TrendingUp, PiggyBank, Target, AlertTriangle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ArrowLeft, User, LogOut, Lightbulb, TrendingUp, PiggyBank, Target, AlertTriangle, DollarSign, Calculator, CreditCard, Bell, Wallet, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
@@ -28,6 +28,8 @@ interface Goal {
 const RecommendationsPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [ruleModalOpen, setRuleModalOpen] = useState(false);
+  const [envelopeModalOpen, setEnvelopeModalOpen] = useState(false);
 
   const { data: transactions = [] } = useQuery({
     queryKey: ['transactions', user?.id],
@@ -121,6 +123,76 @@ const RecommendationsPage = () => {
   };
 
   const recommendations = generateRecommendations();
+
+  const personalizedCards = [
+    {
+      title: "Track Your Daily Expenses",
+      category: "Spending",
+      urgency: "HIGH",
+      description: "Log every purchase, no matter how small. This helps you see where your money goes and identify areas to cut back.",
+      buttonText: "Start Tracking",
+      buttonAction: () => navigate('/transaction-history'),
+      icon: <DollarSign className="h-6 w-6" />
+    },
+    {
+      title: "Set Up an Emergency Fund",
+      category: "Saving",
+      urgency: "HIGH",
+      description: "Aim to save at least 3-6 months of expenses. Start small with just $5-10 per week.",
+      buttonText: "Set Goal",
+      buttonAction: () => navigate('/set-goal'),
+      icon: <PiggyBank className="h-6 w-6" />
+    },
+    {
+      title: "Follow the 50/30/20 Rule",
+      category: "Budgeting",
+      urgency: "MEDIUM",
+      description: "50% for needs, 30% for wants, 20% for savings. Adjust percentages based on your situation.",
+      buttonText: "Learn More",
+      buttonAction: () => setRuleModalOpen(true),
+      icon: <Calculator className="h-6 w-6" />
+    },
+    {
+      title: "Review Subscriptions Monthly",
+      category: "Spending",
+      urgency: "MEDIUM",
+      description: "Cancel unused subscriptions and services. Small recurring charges add up quickly.",
+      buttonText: "Review Now",
+      buttonAction: () => navigate('/transaction-history'),
+      icon: <CreditCard className="h-6 w-6" />
+    },
+    {
+      title: "Automate Your Savings",
+      category: "Saving",
+      urgency: "LOW",
+      description: "Set up automatic transfers to your savings account right after you get paid.",
+      buttonText: "Set Up",
+      buttonAction: () => navigate('/set-goal'),
+      icon: <Bell className="h-6 w-6" />
+    },
+    {
+      title: "Use the Envelope Method",
+      category: "Budgeting",
+      urgency: "LOW",
+      description: "Allocate specific amounts for different categories and stick to those limits.",
+      buttonText: "Try It",
+      buttonAction: () => setEnvelopeModalOpen(true),
+      icon: <Wallet className="h-6 w-6" />
+    }
+  ];
+
+  const getUrgencyColor = (urgency: string) => {
+    switch (urgency) {
+      case 'HIGH':
+        return 'bg-red-100 text-red-700 border-red-200';
+      case 'MEDIUM':
+        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case 'LOW':
+        return 'bg-green-100 text-green-700 border-green-200';
+      default:
+        return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white p-6 pb-24">
@@ -240,9 +312,161 @@ const RecommendationsPage = () => {
           </CardContent>
         </Card>
 
+        {/* New Personalized Recommendations Section */}
+        <div className="space-y-6">
+          <h2 className="text-3xl font-bold text-[#0d1d3d]">Personalized Recommendations</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {personalizedCards.map((card, index) => (
+              <Card key={index} className="shadow-lg border-0 hover:shadow-xl transition-all duration-300 bg-white">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-[#0d1d3d]/10 text-[#0d1d3d]">
+                        {card.icon}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-lg text-[#0d1d3d]">{card.title}</h3>
+                        <p className="text-sm text-gray-600">{card.category}</p>
+                      </div>
+                    </div>
+                    <Badge className={`text-xs font-semibold px-2 py-1 rounded-full border ${getUrgencyColor(card.urgency)}`}>
+                      {card.urgency}
+                    </Badge>
+                  </div>
+                  
+                  <p className="text-gray-700 text-sm mb-4 leading-relaxed">
+                    {card.description}
+                  </p>
+                  
+                  <Button 
+                    onClick={card.buttonAction}
+                    className="w-full bg-[#0d1d3d] hover:bg-[#0d1d3d]/90 text-white font-medium"
+                  >
+                    {card.buttonText}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* Quick Financial Tips Section */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-3">
+            <Lightbulb className="h-8 w-8 text-[#0d1d3d]" />
+            <h2 className="text-3xl font-bold text-[#0d1d3d]">Quick Financial Tips</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Daily Habits Column */}
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold text-[#0d1d3d]">Daily Habits</h3>
+              <ul className="space-y-3">
+                <li className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-[#0d1d3d] mt-2 flex-shrink-0"></div>
+                  <span className="text-gray-700">Check your account balance daily</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-[#0d1d3d] mt-2 flex-shrink-0"></div>
+                  <span className="text-gray-700">Track every expense immediately</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-[#0d1d3d] mt-2 flex-shrink-0"></div>
+                  <span className="text-gray-700">Review your budget weekly</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-[#0d1d3d] mt-2 flex-shrink-0"></div>
+                  <span className="text-gray-700">Set spending alerts on your accounts</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Smart Saving Column */}
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold text-[#0d1d3d]">Smart Saving</h3>
+              <ul className="space-y-3">
+                <li className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-[#0d1d3d] mt-2 flex-shrink-0"></div>
+                  <span className="text-gray-700">Save loose change and small bills</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-[#0d1d3d] mt-2 flex-shrink-0"></div>
+                  <span className="text-gray-700">Use cashback apps and rewards</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-[#0d1d3d] mt-2 flex-shrink-0"></div>
+                  <span className="text-gray-700">Compare prices before major purchases</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-[#0d1d3d] mt-2 flex-shrink-0"></div>
+                  <span className="text-gray-700">Avoid impulse buying with 24-hour rule</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
         {/* Floating Add Button */}
         <FloatingAddButton />
       </div>
+
+      {/* 50/30/20 Rule Modal */}
+      <Dialog open={ruleModalOpen} onOpenChange={setRuleModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-[#0d1d3d]">
+              The 50/30/20 Rule
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-4 h-4 bg-blue-500 rounded"></div>
+                <span className="font-semibold">50% - Needs</span>
+              </div>
+              <p className="text-sm text-gray-600 ml-7">Essential expenses like rent, groceries, utilities, and minimum debt payments.</p>
+              
+              <div className="flex items-center gap-3">
+                <div className="w-4 h-4 bg-yellow-500 rounded"></div>
+                <span className="font-semibold">30% - Wants</span>
+              </div>
+              <p className="text-sm text-gray-600 ml-7">Entertainment, dining out, hobbies, and other non-essential purchases.</p>
+              
+              <div className="flex items-center gap-3">
+                <div className="w-4 h-4 bg-green-500 rounded"></div>
+                <span className="font-semibold">20% - Savings</span>
+              </div>
+              <p className="text-sm text-gray-600 ml-7">Emergency fund, retirement savings, and debt payments above minimums.</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Envelope Method Modal */}
+      <Dialog open={envelopeModalOpen} onOpenChange={setEnvelopeModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-[#0d1d3d]">
+              The Envelope Method
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-gray-700">
+              The envelope method helps you control spending by allocating cash for specific categories.
+            </p>
+            <div className="space-y-2">
+              <p className="font-semibold text-[#0d1d3d]">How it works:</p>
+              <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                <li>• Create "envelopes" for each spending category</li>
+                <li>• Put a set amount of cash in each envelope</li>
+                <li>• Once an envelope is empty, you're done spending in that category</li>
+                <li>• Use digital apps to track virtual envelopes</li>
+              </ul>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
