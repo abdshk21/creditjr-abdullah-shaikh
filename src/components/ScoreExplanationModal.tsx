@@ -1,18 +1,15 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useCreditScore } from '@/hooks/useCreditScore';
 
 interface ScoreExplanationModalProps {
   isOpen: boolean;
   onClose: () => void;
   metric: 'spendingControl' | 'savingsProgress' | 'loggingConsistency';
+  score: number;
 }
 
-const ScoreExplanationModal = ({ isOpen, onClose, metric }: ScoreExplanationModalProps) => {
-  const { breakdown } = useCreditScore();
-  const score = breakdown[metric];
-
+const ScoreExplanationModal = ({ isOpen, onClose, metric, score }: ScoreExplanationModalProps) => {
   const getPerformanceTier = (score: number) => {
     if (score >= 90) return 'Excellent';
     if (score >= 70) return 'Good';

@@ -454,6 +454,7 @@ const MyScorePage = () => {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         metric={selectedMetric}
+        score={breakdown[selectedMetric]}
       />
     </div>
   );

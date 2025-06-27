@@ -1,16 +1,14 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ArrowLeft, TrendingUp, TrendingDown, UtensilsCrossed, Car, BookOpen, Gamepad2, Gift, DollarSign, AlertTriangle, CheckCircle, Calendar as CalendarIcon } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, UtensilsCrossed, Car, BookOpen, Gamepad2, Gift, DollarSign, AlertTriangle, CheckCircle, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
-import { cn } from '@/lib/utils';
 import FloatingAddButton from '@/components/FloatingAddButton';
 
 interface Transaction {
@@ -32,8 +30,6 @@ const TransactionHistoryPage = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
-  const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
-  const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
 
   const categories = [
     { value: 'Food', label: 'Food', icon: UtensilsCrossed },
@@ -57,7 +53,7 @@ const TransactionHistoryPage = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [transactions, filter, dateFilter, customDateFrom, customDateTo]);
+  }, [transactions, filter, dateFilter]);
 
   const fetchTransactions = async () => {
     try {
@@ -90,29 +86,28 @@ const TransactionHistoryPage = () => {
     }
 
     // Apply date filter
-    if (dateFilter === 'current-month') {
+    if (dateFilter !== 'all') {
       const now = new Date();
-      const monthStart = startOfMonth(now);
-      const monthEnd = endOfMonth(now);
-      filtered = filtered.filter(transaction => {
-        const transactionDate = parseISO(transaction.date);
-        return isWithinInterval(transactionDate, { start: monthStart, end: monthEnd });
-      });
-    } else if (dateFilter === 'custom' && customDateFrom && customDateTo) {
-      filtered = filtered.filter(transaction => {
-        const transactionDate = parseISO(transaction.date);
-        return isWithinInterval(transactionDate, { start: customDateFrom, end: customDateTo });
-      });
+      
+      if (dateFilter === 'current-month') {
+        const monthStart = startOfMonth(now);
+        const monthEnd = endOfMonth(now);
+        filtered = filtered.filter(transaction => {
+          const transactionDate = parseISO(transaction.date);
+          return isWithinInterval(transactionDate, { start: monthStart, end: monthEnd });
+        });
+      } else if (dateFilter === 'last-month') {
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const monthStart = startOfMonth(lastMonth);
+        const monthEnd = endOfMonth(lastMonth);
+        filtered = filtered.filter(transaction => {
+          const transactionDate = parseISO(transaction.date);
+          return isWithinInterval(transactionDate, { start: monthStart, end: monthEnd });
+        });
+      }
     }
 
     setFilteredTransactions(filtered);
-  };
-
-  const resetFilters = () => {
-    setFilter('all');
-    setDateFilter('all');
-    setCustomDateFrom(undefined);
-    setCustomDateTo(undefined);
   };
 
   const formatDate = (dateString: string) => {
@@ -171,9 +166,9 @@ const TransactionHistoryPage = () => {
           <h1 className="text-3xl font-bold text-[#102c54]">Transaction History</h1>
         </div>
 
-        {/* Enhanced Filters */}
+        {/* Filters */}
         <Card className="shadow-lg border-0">
-          <CardContent className="p-4 space-y-4">
+          <CardContent className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-gray-700">Type:</span>
@@ -190,7 +185,7 @@ const TransactionHistoryPage = () => {
               </div>
               
               <div className="flex items-center gap-3">
-                <CalendarIcon className="h-4 w-4 text-gray-700" />
+                <Calendar className="h-4 w-4 text-gray-700" />
                 <span className="text-sm font-medium text-gray-700">Period:</span>
                 <Select value={dateFilter} onValueChange={setDateFilter}>
                   <SelectTrigger className="w-40">
@@ -199,84 +194,11 @@ const TransactionHistoryPage = () => {
                   <SelectContent>
                     <SelectItem value="all">All Time</SelectItem>
                     <SelectItem value="current-month">This Month</SelectItem>
-                    <SelectItem value="custom">Custom Range</SelectItem>
+                    <SelectItem value="last-month">Last Month</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
-
-            {/* Custom Date Range Picker */}
-            {dateFilter === 'custom' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">From Date:</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !customDateFrom && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {customDateFrom ? format(customDateFrom, "PPP") : <span>Pick start date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={customDateFrom}
-                        onSelect={setCustomDateFrom}
-                        initialFocus
-                        className="pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">To Date:</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !customDateTo && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {customDateTo ? format(customDateTo, "PPP") : <span>Pick end date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={customDateTo}
-                        onSelect={setCustomDateTo}
-                        initialFocus
-                        className="pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-            )}
-
-            {/* Reset Filters Button */}
-            {(filter !== 'all' || dateFilter !== 'all') && (
-              <div className="pt-2 border-t">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={resetFilters}
-                  className="w-full"
-                >
-                  Reset All Filters
-                </Button>
-              </div>
-            )}
           </CardContent>
         </Card>
 
