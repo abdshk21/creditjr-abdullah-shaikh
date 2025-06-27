@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -155,24 +154,6 @@ const RecommendationsPage = () => {
       icon: <Calculator className="h-6 w-6" />
     },
     {
-      title: "Review Subscriptions Monthly",
-      category: "Spending",
-      urgency: "MEDIUM",
-      description: "Cancel unused subscriptions and services. Small recurring charges add up quickly.",
-      buttonText: "Review Now",
-      buttonAction: () => navigate('/transaction-history'),
-      icon: <CreditCard className="h-6 w-6" />
-    },
-    {
-      title: "Automate Your Savings",
-      category: "Saving",
-      urgency: "LOW",
-      description: "Set up automatic transfers to your savings account right after you get paid.",
-      buttonText: "Set Up",
-      buttonAction: () => navigate('/set-goal'),
-      icon: <Bell className="h-6 w-6" />
-    },
-    {
       title: "Use the Envelope Method",
       category: "Budgeting",
       urgency: "LOW",
@@ -304,7 +285,7 @@ const RecommendationsPage = () => {
           <div className="space-y-6">
             <h2 className="text-3xl font-bold text-[#0d1d3d]">Personalized Recommendations</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
               {personalizedCards.map((card, index) => (
                 <Card key={index} className="shadow-lg border-0 hover:shadow-xl transition-all duration-300 bg-white">
                   <CardContent className="p-6">
