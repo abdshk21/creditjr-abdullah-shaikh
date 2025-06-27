@@ -36,6 +36,124 @@ export type Database = {
         }
         Relationships: []
       }
+      emergency_fund: {
+        Row: {
+          created_at: string
+          current_balance: number | null
+          id: string
+          target_amount: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_balance?: number | null
+          id?: string
+          target_amount?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_balance?: number | null
+          id?: string
+          target_amount?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      emergency_fund_log: {
+        Row: {
+          amount: number | null
+          created_at: string
+          fund_id: string | null
+          id: string
+          reason: string | null
+          type: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          fund_id?: string | null
+          id?: string
+          reason?: string | null
+          type?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          fund_id?: string | null
+          id?: string
+          reason?: string | null
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emergency_fund_log_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_fund"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      envelope_logs: {
+        Row: {
+          amount: number | null
+          created_at: string
+          description: string | null
+          envelope_id: string | null
+          id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          description?: string | null
+          envelope_id?: string | null
+          id?: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          description?: string | null
+          envelope_id?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "envelope_logs_envelope_id_fkey"
+            columns: ["envelope_id"]
+            isOneToOne: false
+            referencedRelation: "envelopes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      envelopes: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          spent_so_far: number | null
+          target_amount: number | null
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          spent_so_far?: number | null
+          target_amount?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          spent_so_far?: number | null
+          target_amount?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           category_limits: Json | null

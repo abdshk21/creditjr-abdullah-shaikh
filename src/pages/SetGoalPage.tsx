@@ -12,12 +12,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import FloatingAddButton from '@/components/FloatingAddButton';
 
 const SetGoalPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [monthlySavingGoal, setMonthlySavingGoal] = useState('');
   const [incomeExpectation, setIncomeExpectation] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,13 +27,13 @@ const SetGoalPage = () => {
   const [emergencyFundTarget, setEmergencyFundTarget] = useState('');
   const [emergencyFundAmount, setEmergencyFundAmount] = useState('');
   const [emergencyFundReason, setEmergencyFundReason] = useState('');
+  const [emergencyFundType, setEmergencyFundType] = useState<'add' | 'deduct'>('add');
   const [setTargetDialogOpen, setSetTargetDialogOpen] = useState(false);
   const [addFundDialogOpen, setAddFundDialogOpen] = useState(false);
   const [deductFundDialogOpen, setDeductFundDialogOpen] = useState(false);
 
   // Expense Envelope states
   const [selectedEnvelope, setSelectedEnvelope] = useState<string | null>(null);
-  const [envelopeTargets, setEnvelopeTargets] = useState<Record<string, number>>({});
   const [envelopeTarget, setEnvelopeTarget] = useState('');
   const [envelopeDialogOpen, setEnvelopeDialogOpen] = useState(false);
 
@@ -69,6 +70,49 @@ const SetGoalPage = () => {
     enabled: !!user?.id,
   });
 
+  // Fetch emergency fund data
+  const { data: emergencyFund } = useQuery({
+    queryKey: ['emergency_fund', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('emergency_fund')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching emergency fund:', error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch expense envelopes
+  const { data: envelopes } = useQuery({
+    queryKey: ['envelopes', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('envelopes')
+        .select('*')
+        .eq('user_id', user.id);
+      
+      if (error) {
+        console.error('Error fetching envelopes:', error);
+        return [];
+      }
+      
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
   // Fetch transactions for envelope progress calculation
   const { data: transactions } = useQuery({
     queryKey: ['transactions', user?.id],
@@ -91,6 +135,119 @@ const SetGoalPage = () => {
     enabled: !!user?.id,
   });
 
+  // Emergency Fund Mutations
+  const setEmergencyFundTargetMutation = useMutation({
+    mutationFn: async (targetAmount: number) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      if (emergencyFund) {
+        // Update existing fund
+        const { error } = await supabase
+          .from('emergency_fund')
+          .update({ target_amount: targetAmount })
+          .eq('id', emergencyFund.id);
+        
+        if (error) throw error;
+      } else {
+        // Create new fund
+        const { error } = await supabase
+          .from('emergency_fund')
+          .insert({
+            user_id: user.id,
+            target_amount: targetAmount,
+            current_balance: 0
+          });
+        
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['emergency_fund', user?.id] });
+      toast.success('Emergency Fund target updated successfully');
+    },
+    onError: (error) => {
+      console.error('Error setting emergency fund target:', error);
+      toast.error('Failed to set emergency fund target');
+    }
+  });
+
+  const updateEmergencyFundMutation = useMutation({
+    mutationFn: async ({ amount, reason, type }: { amount: number; reason: string; type: 'add' | 'deduct' }) => {
+      if (!user?.id || !emergencyFund) throw new Error('User not authenticated or no emergency fund');
+
+      // Insert log entry
+      const { error: logError } = await supabase
+        .from('emergency_fund_log')
+        .insert({
+          fund_id: emergencyFund.id,
+          amount: amount,
+          reason: reason,
+          type: type
+        });
+
+      if (logError) throw logError;
+
+      // Update current balance
+      const newBalance = type === 'add' 
+        ? (emergencyFund.current_balance || 0) + amount
+        : (emergencyFund.current_balance || 0) - amount;
+
+      const { error: updateError } = await supabase
+        .from('emergency_fund')
+        .update({ current_balance: newBalance })
+        .eq('id', emergencyFund.id);
+
+      if (updateError) throw updateError;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['emergency_fund', user?.id] });
+      toast.success(`د.إ${variables.amount} ${variables.type === 'add' ? 'added to' : 'deducted from'} Emergency Fund`);
+    },
+    onError: (error) => {
+      console.error('Error updating emergency fund:', error);
+      toast.error('Failed to update emergency fund');
+    }
+  });
+
+  // Envelope Mutations
+  const setEnvelopeTargetMutation = useMutation({
+    mutationFn: async ({ category, targetAmount }: { category: string; targetAmount: number }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      const existingEnvelope = envelopes?.find(env => env.category === category);
+
+      if (existingEnvelope) {
+        // Update existing envelope
+        const { error } = await supabase
+          .from('envelopes')
+          .update({ target_amount: targetAmount })
+          .eq('id', existingEnvelope.id);
+        
+        if (error) throw error;
+      } else {
+        // Create new envelope
+        const { error } = await supabase
+          .from('envelopes')
+          .insert({
+            user_id: user.id,
+            category: category,
+            target_amount: targetAmount,
+            spent_so_far: 0
+          });
+        
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['envelopes', user?.id] });
+      toast.success('Envelope target updated successfully');
+    },
+    onError: (error) => {
+      console.error('Error setting envelope target:', error);
+      toast.error('Failed to set envelope target');
+    }
+  });
+
   // Calculate current month spending by category
   const getCurrentMonthSpending = (category: string) => {
     if (!transactions) return 0;
@@ -108,6 +265,12 @@ const SetGoalPage = () => {
       .reduce((sum, transaction) => sum + (transaction.amount || 0), 0);
   };
 
+  // Get envelope target for a category
+  const getEnvelopeTarget = (category: string) => {
+    const envelope = envelopes?.find(env => env.category === category);
+    return envelope?.target_amount || 0;
+  };
+
   // Set the input values when existing goals are loaded
   useEffect(() => {
     if (existingGoals) {
@@ -116,10 +279,6 @@ const SetGoalPage = () => {
       }
       if (existingGoals.monthly_saving_goal) {
         setMonthlySavingGoal(existingGoals.monthly_saving_goal.toString());
-      }
-      // Load envelope targets if stored in category_limits
-      if (existingGoals.category_limits) {
-        setEnvelopeTargets(existingGoals.category_limits as Record<string, number>);
       }
     }
   }, [existingGoals]);
@@ -154,7 +313,6 @@ const SetGoalPage = () => {
           user_id: user.id,
           monthly_saving_goal: savingGoalNum,
           income_expectation: incomeNum,
-          category_limits: envelopeTargets,
           updated_at: new Date().toISOString()
         });
 
@@ -178,7 +336,7 @@ const SetGoalPage = () => {
   };
 
   const handleSetTarget = async () => {
-    if (!emergencyFundTarget || !user?.id) {
+    if (!emergencyFundTarget) {
       toast.error('Please enter a target amount');
       return;
     }
@@ -189,14 +347,13 @@ const SetGoalPage = () => {
       return;
     }
 
-    // TODO: Save to Supabase when database is ready
-    toast.success(`Emergency Fund Target set to د.إ${targetNum}`);
+    setEmergencyFundTargetMutation.mutate(targetNum);
     setSetTargetDialogOpen(false);
     setEmergencyFundTarget('');
   };
 
-  const handleAddToFund = async () => {
-    if (!emergencyFundAmount || !emergencyFundReason || !user?.id) {
+  const handleFundTransaction = async (type: 'add' | 'deduct') => {
+    if (!emergencyFundAmount || !emergencyFundReason) {
       toast.error('Please fill in all fields');
       return;
     }
@@ -207,40 +364,34 @@ const SetGoalPage = () => {
       return;
     }
 
-    // TODO: Save to Supabase when database is ready
-    toast.success(`Added د.إ${amountNum} to Emergency Fund`);
-    setAddFundDialogOpen(false);
-    setEmergencyFundAmount('');
-    setEmergencyFundReason('');
-  };
-
-  const handleDeductFromFund = async () => {
-    if (!emergencyFundAmount || !emergencyFundReason || !user?.id) {
-      toast.error('Please fill in all fields');
+    if (!emergencyFund) {
+      toast.error('Please set an emergency fund target first');
       return;
     }
 
-    const amountNum = parseFloat(emergencyFundAmount);
-    if (amountNum <= 0) {
-      toast.error('Please enter a valid positive amount');
-      return;
-    }
+    updateEmergencyFundMutation.mutate({
+      amount: amountNum,
+      reason: emergencyFundReason,
+      type: type
+    });
 
-    // TODO: Save to Supabase when database is ready
-    toast.success(`Deducted د.إ${amountNum} from Emergency Fund`);
-    setDeductFundDialogOpen(false);
+    if (type === 'add') {
+      setAddFundDialogOpen(false);
+    } else {
+      setDeductFundDialogOpen(false);
+    }
     setEmergencyFundAmount('');
     setEmergencyFundReason('');
   };
 
   const handleEnvelopeClick = (categoryName: string) => {
     setSelectedEnvelope(categoryName);
-    setEnvelopeTarget(envelopeTargets[categoryName]?.toString() || '');
+    setEnvelopeTarget(getEnvelopeTarget(categoryName).toString() || '');
     setEnvelopeDialogOpen(true);
   };
 
   const handleSaveEnvelopeTarget = async () => {
-    if (!selectedEnvelope || !envelopeTarget || !user?.id) {
+    if (!selectedEnvelope || !envelopeTarget) {
       toast.error('Please enter a target amount');
       return;
     }
@@ -251,35 +402,10 @@ const SetGoalPage = () => {
       return;
     }
 
-    const newTargets = {
-      ...envelopeTargets,
-      [selectedEnvelope]: targetNum
-    };
-
-    setEnvelopeTargets(newTargets);
-
-    try {
-      const { error } = await supabase
-        .from('goals')
-        .upsert({
-          user_id: user.id,
-          monthly_saving_goal: parseFloat(monthlySavingGoal) || null,
-          income_expectation: parseFloat(incomeExpectation) || null,
-          category_limits: newTargets,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) {
-        console.error('Error saving envelope target:', error);
-        toast.error('Failed to save target: ' + error.message);
-        return;
-      }
-
-      toast.success(`${selectedEnvelope} target set to د.إ${targetNum}`);
-    } catch (error) {
-      console.error('Error saving envelope target:', error);
-      toast.error('Failed to save target. Please try again.');
-    }
+    setEnvelopeTargetMutation.mutate({
+      category: selectedEnvelope,
+      targetAmount: targetNum
+    });
 
     setEnvelopeDialogOpen(false);
     setSelectedEnvelope(null);
@@ -293,15 +419,11 @@ const SetGoalPage = () => {
   };
 
   const getProgressPercentage = (category: string) => {
-    const target = envelopeTargets[category];
+    const target = getEnvelopeTarget(category);
     if (!target) return 0;
     
     const spent = getCurrentMonthSpending(category);
     return Math.min((spent / target) * 100, 100);
-  };
-
-  const handleLogout = () => {
-    // Implement logout logic here
   };
 
   return (
@@ -419,9 +541,13 @@ const SetGoalPage = () => {
               </CardHeader>
               <CardContent className="p-8 space-y-6">
                 <div className="text-center mb-6">
-                  <div className="text-3xl font-bold text-gray-800 mb-2">د.إ 0.00</div>
+                  <div className="text-3xl font-bold text-gray-800 mb-2">
+                    د.إ {emergencyFund?.current_balance?.toFixed(2) || '0.00'}
+                  </div>
                   <div className="text-sm text-gray-600">Current Balance</div>
-                  <div className="text-xs text-gray-500 mt-1">Target: د.إ 0.00</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Target: د.إ {emergencyFund?.target_amount?.toFixed(2) || '0.00'}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -458,8 +584,12 @@ const SetGoalPage = () => {
                           <Button variant="outline" onClick={() => setSetTargetDialogOpen(false)}>
                             Cancel
                           </Button>
-                          <Button onClick={handleSetTarget} className="bg-blue-600 hover:bg-blue-700">
-                            Set Target
+                          <Button 
+                            onClick={handleSetTarget} 
+                            className="bg-blue-600 hover:bg-blue-700"
+                            disabled={setEmergencyFundTargetMutation.isPending}
+                          >
+                            {setEmergencyFundTargetMutation.isPending ? 'Setting...' : 'Set Target'}
                           </Button>
                         </div>
                       </div>
@@ -509,8 +639,12 @@ const SetGoalPage = () => {
                           <Button variant="outline" onClick={() => setAddFundDialogOpen(false)}>
                             Cancel
                           </Button>
-                          <Button onClick={handleAddToFund} className="bg-green-600 hover:bg-green-700">
-                            Add to Fund
+                          <Button 
+                            onClick={() => handleFundTransaction('add')} 
+                            className="bg-green-600 hover:bg-green-700"
+                            disabled={updateEmergencyFundMutation.isPending}
+                          >
+                            {updateEmergencyFundMutation.isPending ? 'Adding...' : 'Add to Fund'}
                           </Button>
                         </div>
                       </div>
@@ -560,8 +694,12 @@ const SetGoalPage = () => {
                           <Button variant="outline" onClick={() => setDeductFundDialogOpen(false)}>
                             Cancel
                           </Button>
-                          <Button onClick={handleDeductFromFund} className="bg-red-600 hover:bg-red-700">
-                            Deduct from Fund
+                          <Button 
+                            onClick={() => handleFundTransaction('deduct')} 
+                            className="bg-red-600 hover:bg-red-700"
+                            disabled={updateEmergencyFundMutation.isPending}
+                          >
+                            {updateEmergencyFundMutation.isPending ? 'Deducting...' : 'Deduct from Fund'}
                           </Button>
                         </div>
                       </div>
@@ -592,7 +730,7 @@ const SetGoalPage = () => {
                   {envelopeCategories.map((category) => {
                     const progress = getProgressPercentage(category.name);
                     const spent = getCurrentMonthSpending(category.name);
-                    const target = envelopeTargets[category.name] || 0;
+                    const target = getEnvelopeTarget(category.name);
                     
                     return (
                       <div
@@ -655,13 +793,13 @@ const SetGoalPage = () => {
                 </div>
               </div>
 
-              {selectedEnvelope && envelopeTargets[selectedEnvelope] && (
+              {selectedEnvelope && getEnvelopeTarget(selectedEnvelope) > 0 && (
                 <div className="space-y-3">
                   <div className="text-sm font-medium text-gray-700">Current Progress</div>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Spent this month</span>
-                      <span>د.إ{getCurrentMonthSpending(selectedEnvelope).toFixed(2)} / د.إ{envelopeTargets[selectedEnvelope]}</span>
+                      <span>د.إ{getCurrentMonthSpending(selectedEnvelope).toFixed(2)} / د.إ{getEnvelopeTarget(selectedEnvelope)}</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3">
                       <div 
@@ -680,8 +818,12 @@ const SetGoalPage = () => {
                 <Button variant="outline" onClick={() => setEnvelopeDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleSaveEnvelopeTarget} className="bg-purple-600 hover:bg-purple-700">
-                  Save Target
+                <Button 
+                  onClick={handleSaveEnvelopeTarget} 
+                  className="bg-purple-600 hover:bg-purple-700"
+                  disabled={setEnvelopeTargetMutation.isPending}
+                >
+                  {setEnvelopeTargetMutation.isPending ? 'Saving...' : 'Save Target'}
                 </Button>
               </div>
             </div>
