@@ -12,7 +12,7 @@ interface CreditScoreWidgetProps {
 }
 
 const CreditScoreWidget = ({ size = 'medium', showTitle = false }: CreditScoreWidgetProps) => {
-  const { score, tier, getScoreColor } = useCreditScore();
+  const { currentScore, getScoreColor, getScoreLabel } = useCreditScore();
   const [exploreModalOpen, setExploreModalOpen] = useState(false);
 
   const getSizeClasses = () => {
@@ -45,7 +45,7 @@ const CreditScoreWidget = ({ size = 'medium', showTitle = false }: CreditScoreWi
   const radius = size === 'large' ? 90 : size === 'small' ? 60 : 75;
   const circumference = 2 * Math.PI * radius;
   const strokeDasharray = circumference;
-  const strokeDashoffset = circumference - (score / 100) * (circumference * 0.75);
+  const strokeDashoffset = circumference - (currentScore / 100) * (circumference * 0.75);
 
   return (
     <>
@@ -75,7 +75,7 @@ const CreditScoreWidget = ({ size = 'medium', showTitle = false }: CreditScoreWi
                 <path
                   d={`M 25 100 A ${radius} ${radius} 0 0 1 175 100`}
                   fill="none"
-                  stroke={getScoreColor(score)}
+                  stroke={getScoreColor(currentScore)}
                   strokeWidth="8"
                   strokeLinecap="round"
                   strokeDasharray={strokeDasharray * 0.75}
@@ -87,10 +87,10 @@ const CreditScoreWidget = ({ size = 'medium', showTitle = false }: CreditScoreWi
               {/* Centered Score Number */}
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className={`${sizeClasses.score} font-bold text-[#102c54]`}>
-                  {score}
+                  {currentScore}
                 </span>
                 <span className="text-sm text-gray-600 font-medium">
-                  {tier}
+                  {getScoreLabel(currentScore)}
                 </span>
               </div>
             </div>
