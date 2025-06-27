@@ -10,7 +10,7 @@ import { ArrowLeft, TrendingUp, TrendingDown, UtensilsCrossed, Car, BookOpen, Ga
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfYear, endOfYear, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-fns';
 import FloatingAddButton from '@/components/FloatingAddButton';
 
 interface Transaction {
@@ -86,6 +86,7 @@ const TransactionHistoryPage = () => {
 
   const applyFilters = () => {
     let filtered = transactions;
+    const now = new Date();
 
     // Apply type filter
     if (filter !== 'all') {
@@ -93,13 +94,33 @@ const TransactionHistoryPage = () => {
     }
 
     // Apply date filter
-    if (dateFilter === 'current-month') {
-      const now = new Date();
+    if (dateFilter === 'today') {
+      const dayStart = startOfDay(now);
+      const dayEnd = endOfDay(now);
+      filtered = filtered.filter(transaction => {
+        const transactionDate = parseISO(transaction.date);
+        return isWithinInterval(transactionDate, { start: dayStart, end: dayEnd });
+      });
+    } else if (dateFilter === 'this-week') {
+      const weekStart = startOfWeek(now);
+      const weekEnd = endOfWeek(now);
+      filtered = filtered.filter(transaction => {
+        const transactionDate = parseISO(transaction.date);
+        return isWithinInterval(transactionDate, { start: weekStart, end: weekEnd });
+      });
+    } else if (dateFilter === 'current-month') {
       const monthStart = startOfMonth(now);
       const monthEnd = endOfMonth(now);
       filtered = filtered.filter(transaction => {
         const transactionDate = parseISO(transaction.date);
         return isWithinInterval(transactionDate, { start: monthStart, end: monthEnd });
+      });
+    } else if (dateFilter === 'this-year') {
+      const yearStart = startOfYear(now);
+      const yearEnd = endOfYear(now);
+      filtered = filtered.filter(transaction => {
+        const transactionDate = parseISO(transaction.date);
+        return isWithinInterval(transactionDate, { start: yearStart, end: yearEnd });
       });
     } else if (dateFilter === 'custom' && customDateRange.from && customDateRange.to) {
       filtered = filtered.filter(transaction => {
@@ -135,6 +156,26 @@ const TransactionHistoryPage = () => {
     setFilter('all');
     setDateFilter('all');
     setCustomDateRange({ from: undefined, to: undefined });
+  };
+
+  const getDateFilterLabel = () => {
+    switch (dateFilter) {
+      case 'today':
+        return 'today';
+      case 'this-week':
+        return 'this week';
+      case 'current-month':
+        return 'this month';
+      case 'this-year':
+        return 'this year';
+      case 'custom':
+        if (customDateRange.from && customDateRange.to) {
+          return `${format(customDateRange.from, 'MMM dd')} - ${format(customDateRange.to, 'MMM dd')}`;
+        }
+        return 'custom range';
+      default:
+        return 'all time';
+    }
   };
 
   const groupedTransactions = groupTransactionsByDate(filteredTransactions);
@@ -204,7 +245,10 @@ const TransactionHistoryPage = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="this-week">This Week</SelectItem>
                       <SelectItem value="current-month">This Month</SelectItem>
+                      <SelectItem value="this-year">This Year</SelectItem>
                       <SelectItem value="custom">Custom Range</SelectItem>
                     </SelectContent>
                   </Select>
@@ -403,12 +447,7 @@ const TransactionHistoryPage = () => {
             <CardContent className="p-6">
               <div className="text-center">
                 <div className="text-sm text-gray-600 mb-2">
-                  Total Transactions ({filter !== 'all' ? filter : 'all types'}, {
-                    dateFilter === 'current-month' ? 'this month' :
-                    dateFilter === 'custom' && customDateRange.from && customDateRange.to ? 
-                      `${format(customDateRange.from, 'MMM dd')} - ${format(customDateRange.to, 'MMM dd')}` :
-                    'all time'
-                  })
+                  Total Transactions ({filter !== 'all' ? filter : 'all types'}, {getDateFilterLabel()})
                 </div>
                 <div className="text-2xl font-bold text-[#102c54]">{filteredTransactions.length}</div>
               </div>

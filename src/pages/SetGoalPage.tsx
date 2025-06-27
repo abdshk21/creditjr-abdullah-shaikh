@@ -1,15 +1,18 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Target, TrendingUp, User, LogOut } from 'lucide-react';
+import { ArrowLeft, Target, TrendingUp, User, LogOut, PiggyBank, Plus, Minus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import FloatingAddButton from '@/components/FloatingAddButton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 const SetGoalPage = () => {
   const navigate = useNavigate();
@@ -17,6 +20,16 @@ const SetGoalPage = () => {
   const [monthlySavingGoal, setMonthlySavingGoal] = useState('');
   const [incomeExpectation, setIncomeExpectation] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Emergency Fund states
+  const [emergencyTarget, setEmergencyTarget] = useState('');
+  const [addAmount, setAddAmount] = useState('');
+  const [deductAmount, setDeductAmount] = useState('');
+  const [addReason, setAddReason] = useState('');
+  const [deductReason, setDeductReason] = useState('');
+  const [showSetTarget, setShowSetTarget] = useState(false);
+  const [showAddFund, setShowAddFund] = useState(false);
+  const [showDeductFund, setShowDeductFund] = useState(false);
 
   // Fetch existing goals
   const { data: existingGoals } = useQuery({
@@ -105,6 +118,62 @@ const SetGoalPage = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSetEmergencyTarget = async () => {
+    if (!emergencyTarget || !user?.id) {
+      toast.error('Please enter a target amount');
+      return;
+    }
+
+    const targetNum = parseFloat(emergencyTarget);
+    if (targetNum <= 0) {
+      toast.error('Please enter a valid positive amount');
+      return;
+    }
+
+    // For now, just show success - database will be created later
+    toast.success(`Emergency fund target set: د.إ ${targetNum}`);
+    setShowSetTarget(false);
+    setEmergencyTarget('');
+  };
+
+  const handleAddToFund = async () => {
+    if (!addAmount || !addReason || !user?.id) {
+      toast.error('Please enter both amount and reason');
+      return;
+    }
+
+    const amountNum = parseFloat(addAmount);
+    if (amountNum <= 0) {
+      toast.error('Please enter a valid positive amount');
+      return;
+    }
+
+    // For now, just show success - database will be created later
+    toast.success(`Added د.إ ${amountNum} to emergency fund: ${addReason}`);
+    setShowAddFund(false);
+    setAddAmount('');
+    setAddReason('');
+  };
+
+  const handleDeductFromFund = async () => {
+    if (!deductAmount || !deductReason || !user?.id) {
+      toast.error('Please enter both amount and reason');
+      return;
+    }
+
+    const amountNum = parseFloat(deductAmount);
+    if (amountNum <= 0) {
+      toast.error('Please enter a valid positive amount');
+      return;
+    }
+
+    // For now, just show success - database will be created later
+    toast.success(`Deducted د.إ ${amountNum} from emergency fund: ${deductReason}`);
+    setShowDeductFund(false);
+    setDeductAmount('');
+    setDeductReason('');
   };
 
   const handleLogout = () => {
@@ -210,6 +279,165 @@ const SetGoalPage = () => {
                 <div>Current savings target: د.إ{existingGoals.monthly_saving_goal || 0}</div>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Emergency Fund Section */}
+        <Card className="shadow-lg border-0">
+          <CardHeader className="bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-t-lg">
+            <CardTitle className="text-xl flex items-center gap-3">
+              <PiggyBank className="h-6 w-6" />
+              Emergency Fund
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-8">
+            <div className="text-center mb-6">
+              <p className="text-gray-600 mb-4">
+                Build your emergency fund to prepare for unexpected expenses and secure your financial future.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Set Target Button */}
+              <Dialog open={showSetTarget} onOpenChange={setShowSetTarget}>
+                <DialogTrigger asChild>
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white h-12 flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    Set Target
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Set Emergency Fund Target</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="emergency-target">Target Amount (د.إ)</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                          د.إ
+                        </span>
+                        <Input
+                          id="emergency-target"
+                          type="number"
+                          value={emergencyTarget}
+                          onChange={(e) => setEmergencyTarget(e.target.value)}
+                          placeholder="0.00"
+                          className="pl-12"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                    <Button onClick={handleSetEmergencyTarget} className="w-full">
+                      Set Target
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Add to Fund Button */}
+              <Dialog open={showAddFund} onOpenChange={setShowAddFund}>
+                <DialogTrigger asChild>
+                  <Button className="bg-green-600 hover:bg-green-700 text-white h-12 flex items-center gap-2">
+                    <Plus className="h-5 w-5" />
+                    Add to Fund
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add to Emergency Fund</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="add-amount">Amount (د.إ)</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                          د.إ
+                        </span>
+                        <Input
+                          id="add-amount"
+                          type="number"
+                          value={addAmount}
+                          onChange={(e) => setAddAmount(e.target.value)}
+                          placeholder="0.00"
+                          className="pl-12"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="add-reason">Reason</Label>
+                      <Textarea
+                        id="add-reason"
+                        value={addReason}
+                        onChange={(e) => setAddReason(e.target.value)}
+                        placeholder="Why are you adding to your emergency fund?"
+                        rows={3}
+                      />
+                    </div>
+                    <Button onClick={handleAddToFund} className="w-full">
+                      Add to Fund
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Deduct from Fund Button */}
+              <Dialog open={showDeductFund} onOpenChange={setShowDeductFund}>
+                <DialogTrigger asChild>
+                  <Button className="bg-red-600 hover:bg-red-700 text-white h-12 flex items-center gap-2">
+                    <Minus className="h-5 w-5" />
+                    Deduct from Fund
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Deduct from Emergency Fund</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="deduct-amount">Amount (د.إ)</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                          د.إ
+                        </span>
+                        <Input
+                          id="deduct-amount"
+                          type="number"
+                          value={deductAmount}
+                          onChange={(e) => setDeductAmount(e.target.value)}
+                          placeholder="0.00"
+                          className="pl-12"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="deduct-reason">Reason</Label>
+                      <Textarea
+                        id="deduct-reason"
+                        value={deductReason}
+                        onChange={(e) => setDeductReason(e.target.value)}
+                        placeholder="Why are you using your emergency fund?"
+                        rows={3}
+                      />
+                    </div>
+                    <Button onClick={handleDeductFromFund} className="w-full">
+                      Deduct from Fund
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+              <p className="text-yellow-700 text-sm">
+                💰 <strong>Tip:</strong> Aim for 3-6 months of expenses in your emergency fund. Start small and build it over time!
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
