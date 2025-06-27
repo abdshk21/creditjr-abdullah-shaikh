@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Award, ArrowLeft, RefreshCw, TrendingUp, User, LogOut, PiggyBank, Calendar, Info } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Award, ArrowLeft, RefreshCw, TrendingUp, User, LogOut, PiggyBank, Calendar, Info, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -104,6 +105,7 @@ const MyScorePage = () => {
   const [previousScore, setPreviousScore] = useState<number | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<'spendingControl' | 'savingsProgress' | 'loggingConsistency'>('spendingControl');
+  const [exploreModalOpen, setExploreModalOpen] = useState(false);
 
   const { 
     currentScore, 
@@ -183,6 +185,11 @@ const MyScorePage = () => {
   const handleLearnMore = (metric: 'spendingControl' | 'savingsProgress' | 'loggingConsistency') => {
     setSelectedMetric(metric);
     setModalOpen(true);
+  };
+
+  const handleExploreMetric = () => {
+    window.open('https://drive.google.com/file/d/1hOFjBllnJQ1op-VMRHYf2ibCRU0OwbrT/view?usp=sharing', '_blank');
+    setExploreModalOpen(false);
   };
 
   return (
@@ -266,9 +273,20 @@ const MyScorePage = () => {
           {/* Left Column - Current Score */}
           <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
             <CardHeader className="bg-gradient-to-r from-[#d8a434] to-[#f4c430] text-white rounded-t-lg">
-              <CardTitle className="text-2xl flex items-center gap-3">
-                <Award className="h-7 w-7" />
-                Current Score
+              <CardTitle className="text-2xl flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Award className="h-7 w-7" />
+                  Current Score
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setExploreModalOpen(true)}
+                  className="text-white hover:bg-white/10 text-sm font-medium"
+                >
+                  Explore the Metric
+                  <ExternalLink className="h-4 w-4 ml-1" />
+                </Button>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-8 text-center">
@@ -448,6 +466,29 @@ const MyScorePage = () => {
       
       {/* Floating Add Button */}
       <FloatingAddButton />
+
+      {/* Explore Metric Modal */}
+      <Dialog open={exploreModalOpen} onOpenChange={setExploreModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-[#102c54]">
+              Explore Credit Score Metrics
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-gray-700">
+              Learn more about how credit scores work and what factors influence them.
+            </div>
+            <Button 
+              onClick={handleExploreMetric}
+              className="w-full bg-gradient-to-r from-[#d8a434] to-[#f4c430] hover:from-[#e6b345] hover:to-[#f8d147] text-white"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Open Resource
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal */}
       <ScoreExplanationModal
