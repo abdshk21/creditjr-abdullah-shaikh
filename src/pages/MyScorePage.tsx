@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Award, ArrowLeft, RefreshCw, TrendingUp, User, LogOut } from 'lucide-react';
+import { Award, ArrowLeft, RefreshCw, TrendingUp, User, LogOut, PiggyBank, Calendar, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,9 +10,8 @@ import { format } from 'date-fns';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import Confetti from '@/components/Confetti';
 import FloatingAddButton from '@/components/FloatingAddButton';
-import CreditScoreWidget from '@/components/CreditScoreWidget';
-import ScoreBreakdown from '@/components/ScoreBreakdown';
 import { useCreditScore } from '@/hooks/useCreditScore';
+import ScoreExplanationModal from '@/components/ScoreExplanationModal';
 
 interface Transaction {
   id: string;
@@ -104,6 +102,8 @@ const MyScorePage = () => {
   const [scoreChangeMessage, setScoreChangeMessage] = useState('');
   const [showWarning, setShowWarning] = useState(false);
   const [previousScore, setPreviousScore] = useState<number | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedMetric, setSelectedMetric] = useState<'spendingControl' | 'savingsProgress' | 'loggingConsistency'>('spendingControl');
 
   const { 
     currentScore, 
@@ -180,6 +180,11 @@ const MyScorePage = () => {
     }
   };
 
+  const handleLearnMore = (metric: 'spendingControl' | 'savingsProgress' | 'loggingConsistency') => {
+    setSelectedMetric(metric);
+    setModalOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-white p-6 pb-24">
       {/* Confetti Component */}
@@ -229,7 +234,6 @@ const MyScorePage = () => {
                   className="w-10 h-10 rounded-full border-2 border-white/20 cursor-pointer hover:border-white/40 transition-all"
                   onClick={() => navigate('/my-account')}
                   onError={(e) => {
-                    // Fallback to default user icon if image fails to load
                     e.currentTarget.style.display = 'none';
                     e.currentTarget.nextElementSibling?.classList.remove('hidden');
                   }}
@@ -257,20 +261,55 @@ const MyScorePage = () => {
 
         <h2 className="text-3xl font-bold text-[#102c54]">Your Virtual Credit Score</h2>
 
-        {/* Enhanced Score Display */}
-        <div className="flex justify-center">
-          <CreditScoreWidget size="large" showTitle={true} />
-        </div>
-        
-        {creditScore?.last_calculated && (
-          <div className="text-sm text-gray-500 text-center">
-            Last updated: {formatLastUpdated(creditScore.last_calculated)}
-          </div>
-        )}
-
-        {/* Score Display and Breakdown Grid */}
+        {/* Top Section - Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Enhanced Breakdown Section */}
+          {/* Left Column - Current Score */}
+          <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
+            <CardHeader className="bg-gradient-to-r from-[#d8a434] to-[#f4c430] text-white rounded-t-lg">
+              <CardTitle className="text-2xl flex items-center gap-3">
+                <Award className="h-7 w-7" />
+                Current Score
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-8 text-center">
+              <div className="relative" style={{ width: 280, height: 180 }}>
+                <svg width={280} height={180} className="transform rotate-0">
+                  <path
+                    d={`M 20 140 A 120 120 0 0 1 260 140`}
+                    fill="none"
+                    stroke="#e5e7eb"
+                    strokeWidth="12"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d={`M 20 140 A 120 120 0 0 1 260 140`}
+                    fill="none"
+                    stroke={getScoreColor(currentScore)}
+                    strokeWidth="12"
+                    strokeLinecap="round"
+                    strokeDasharray={Math.PI * 120}
+                    strokeDashoffset={Math.PI * 120 - (currentScore - 300) / 550 * Math.PI * 120}
+                    className="transition-all duration-1000 ease-out"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="text-4xl font-bold" style={{ color: getScoreColor(currentScore) }}>
+                    {currentScore}
+                  </div>
+                  <div className="text-sm font-medium text-gray-600 mt-1">
+                    {getScoreLabel(currentScore)}
+                  </div>
+                </div>
+              </div>
+              {creditScore?.last_calculated && (
+                <div className="text-sm text-gray-500 mt-4">
+                  Last updated: {formatLastUpdated(creditScore.last_calculated)}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Right Column - Score Breakdown Pie Chart */}
           <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
             <CardHeader>
               <CardTitle className="text-[#102c54] flex items-center gap-2 text-xl">
@@ -279,52 +318,30 @@ const MyScorePage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Chart */}
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={chartData}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={80}
-                        dataKey="value"
-                      >
-                        {chartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value) => [`${value}%`, '']} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                
-                {/* Breakdown Details */}
-                <div className="space-y-4">
-                  {chartData.map((item) => (
-                    <div key={item.name} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg hover:from-gray-100 hover:to-gray-200 transition-all duration-200">
-                      <div className="flex items-center gap-3">
-                        <div 
-                          className="w-5 h-5 rounded-full" 
-                          style={{ backgroundColor: item.color }}
-                        />
-                        <span className="font-semibold">{item.name}</span>
-                      </div>
-                      <span className="text-xl font-bold">{item.value}%</span>
-                    </div>
-                  ))}
-                </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={chartData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      dataKey="value"
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => [`${value}%`, '']} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
-
-          {/* Score Breakdown Panel */}
-          <ScoreBreakdown />
         </div>
 
-        {/* Recalculate Button Below Both Sections */}
+        {/* Recalculate Button */}
         <div className="flex justify-center">
           <Button
             onClick={handleRecalculate}
@@ -344,10 +361,101 @@ const MyScorePage = () => {
             )}
           </Button>
         </div>
+
+        {/* Score Breakdown Cards */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-red-50 to-red-100 rounded-lg border-l-4 border-red-500">
+            <div className="flex items-start gap-3">
+              <TrendingUp className="h-5 w-5 text-red-600 mt-0.5" />
+              <div className="flex-1">
+                <div className="font-semibold text-red-700">Spending Control (40%)</div>
+                <div className="text-sm text-gray-600 mt-1">
+                  How well you stay within your monthly budget
+                </div>
+                <div className="text-lg font-bold text-red-600 mt-2">
+                  {breakdown.spendingControl}%
+                </div>
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => handleLearnMore('spendingControl')}
+              className="ml-4"
+            >
+              Learn More
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border-l-4 border-green-500">
+            <div className="flex items-start gap-3">
+              <PiggyBank className="h-5 w-5 text-green-600 mt-0.5" />
+              <div className="flex-1">
+                <div className="font-semibold text-green-700">Savings Progress (30%)</div>
+                <div className="text-sm text-gray-600 mt-1">
+                  Progress towards your monthly savings goal
+                </div>
+                <div className="text-lg font-bold text-green-600 mt-2">
+                  {breakdown.savingsProgress}%
+                </div>
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => handleLearnMore('savingsProgress')}
+              className="ml-4"
+            >
+              Learn More
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border-l-4 border-blue-500">
+            <div className="flex items-start gap-3">
+              <Calendar className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div className="flex-1">
+                <div className="font-semibold text-blue-700">Logging Consistency (30%)</div>
+                <div className="text-sm text-gray-600 mt-1">
+                  How regularly you track your transactions
+                </div>
+                <div className="text-lg font-bold text-blue-600 mt-2">
+                  {breakdown.loggingConsistency}%
+                </div>
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => handleLearnMore('loggingConsistency')}
+              className="ml-4"
+            >
+              Learn More
+            </Button>
+          </div>
+        </div>
+
+        {/* How to Improve Your Score */}
+        <div className="mt-8 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg">
+          <div className="text-lg font-semibold text-gray-800 mb-4">How to improve your score:</div>
+          <ul className="text-sm text-gray-700 space-y-2">
+            <li>• Keep spending below 70% of your monthly income</li>
+            <li>• Save at least 20% of your income each month</li>
+            <li>• Log transactions regularly and consistently</li>
+            <li>• Set and achieve realistic financial goals</li>
+          </ul>
+        </div>
       </div>
       
       {/* Floating Add Button */}
       <FloatingAddButton />
+
+      {/* Modal */}
+      <ScoreExplanationModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        metric={selectedMetric}
+        score={breakdown[selectedMetric]}
+      />
     </div>
   );
 };
