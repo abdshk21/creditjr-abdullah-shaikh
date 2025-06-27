@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import BottomNavigation from "@/components/BottomNavigation";
+import FinBuddy from "@/components/FinBuddy";
 import Dashboard from "./pages/Dashboard";
 import AddTransactionPage from "./pages/AddTransactionPage";
 import TransactionHistoryPage from "./pages/TransactionHistoryPage";
@@ -33,54 +34,63 @@ const App = () => (
                 <ProtectedRoute>
                   <Dashboard />
                   <BottomNavigation />
+                  <FinBuddy />
                 </ProtectedRoute>
               } />
               <Route path="/add-transaction" element={
                 <ProtectedRoute>
                   <AddTransactionPage />
                   <BottomNavigation />
+                  <FinBuddy />
                 </ProtectedRoute>
               } />
               <Route path="/transaction-history" element={
                 <ProtectedRoute>
                   <TransactionHistoryPage />
                   <BottomNavigation />
+                  <FinBuddy />
                 </ProtectedRoute>
               } />
               <Route path="/set-goal" element={
                 <ProtectedRoute>
                   <SetGoalPage />
                   <BottomNavigation />
+                  <FinBuddy />
                 </ProtectedRoute>
               } />
               <Route path="/my-score" element={
                 <ProtectedRoute>
                   <MyScorePage />
                   <BottomNavigation />
+                  <FinBuddy />
                 </ProtectedRoute>
               } />
               <Route path="/recommendations" element={
                 <ProtectedRoute>
                   <RecommendationsPage />
                   <BottomNavigation />
+                  <FinBuddy />
                 </ProtectedRoute>
               } />
               <Route path="/learn" element={
                 <ProtectedRoute>
                   <LearnPage />
                   <BottomNavigation />
+                  <FinBuddy />
                 </ProtectedRoute>
               } />
               <Route path="/quiz" element={
                 <ProtectedRoute>
                   <QuizPage />
                   <BottomNavigation />
+                  <FinBuddy />
                 </ProtectedRoute>
               } />
               <Route path="/my-account" element={
                 <ProtectedRoute>
                   <MyAccountPage />
                   <BottomNavigation />
+                  <FinBuddy />
                 </ProtectedRoute>
               } />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
