@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,7 @@ import { ArrowLeft, TrendingUp, TrendingDown, UtensilsCrossed, Car, BookOpen, Ga
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfYear, endOfYear } from 'date-fns';
 import FloatingAddButton from '@/components/FloatingAddButton';
 
 interface Transaction {
@@ -93,13 +92,34 @@ const TransactionHistoryPage = () => {
     }
 
     // Apply date filter
-    if (dateFilter === 'current-month') {
-      const now = new Date();
+    const now = new Date();
+    if (dateFilter === 'today') {
+      const dayStart = startOfDay(now);
+      const dayEnd = endOfDay(now);
+      filtered = filtered.filter(transaction => {
+        const transactionDate = parseISO(transaction.date);
+        return isWithinInterval(transactionDate, { start: dayStart, end: dayEnd });
+      });
+    } else if (dateFilter === 'this-week') {
+      const weekStart = startOfWeek(now);
+      const weekEnd = endOfWeek(now);
+      filtered = filtered.filter(transaction => {
+        const transactionDate = parseISO(transaction.date);
+        return isWithinInterval(transactionDate, { start: weekStart, end: weekEnd });
+      });
+    } else if (dateFilter === 'this-month') {
       const monthStart = startOfMonth(now);
       const monthEnd = endOfMonth(now);
       filtered = filtered.filter(transaction => {
         const transactionDate = parseISO(transaction.date);
         return isWithinInterval(transactionDate, { start: monthStart, end: monthEnd });
+      });
+    } else if (dateFilter === 'this-year') {
+      const yearStart = startOfYear(now);
+      const yearEnd = endOfYear(now);
+      filtered = filtered.filter(transaction => {
+        const transactionDate = parseISO(transaction.date);
+        return isWithinInterval(transactionDate, { start: yearStart, end: yearEnd });
       });
     } else if (dateFilter === 'custom' && customDateRange.from && customDateRange.to) {
       filtered = filtered.filter(transaction => {
@@ -204,7 +224,10 @@ const TransactionHistoryPage = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="current-month">This Month</SelectItem>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="this-week">This Week</SelectItem>
+                      <SelectItem value="this-month">This Month</SelectItem>
+                      <SelectItem value="this-year">This Year</SelectItem>
                       <SelectItem value="custom">Custom Range</SelectItem>
                     </SelectContent>
                   </Select>
@@ -404,7 +427,10 @@ const TransactionHistoryPage = () => {
               <div className="text-center">
                 <div className="text-sm text-gray-600 mb-2">
                   Total Transactions ({filter !== 'all' ? filter : 'all types'}, {
-                    dateFilter === 'current-month' ? 'this month' :
+                    dateFilter === 'today' ? 'today' :
+                    dateFilter === 'this-week' ? 'this week' :
+                    dateFilter === 'this-month' ? 'this month' :
+                    dateFilter === 'this-year' ? 'this year' :
                     dateFilter === 'custom' && customDateRange.from && customDateRange.to ? 
                       `${format(customDateRange.from, 'MMM dd')} - ${format(customDateRange.to, 'MMM dd')}` :
                     'all time'
