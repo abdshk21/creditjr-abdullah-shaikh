@@ -22,7 +22,7 @@ const CreditScoreWidget = ({ size = 'small', showTitle = true, className = '' }:
     const strokeDashoffset = circumference - (score - 300) / 550 * circumference;
 
     return (
-      <div className="relative" style={{ width: size, height: size / 2 + 40 }}>
+      <div className="relative flex items-center justify-center" style={{ width: size, height: size / 2 + 40 }}>
         <svg width={size} height={size / 2 + 40} className="transform rotate-0">
           {/* Background arc */}
           <path
@@ -44,12 +44,12 @@ const CreditScoreWidget = ({ size = 'small', showTitle = true, className = '' }:
             className="transition-all duration-1000 ease-out"
           />
         </svg>
-        {/* Score text */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <div className={`font-bold ${size === 320 ? 'text-4xl' : 'text-2xl'}`} style={{ color: getScoreColor(score) }}>
+        {/* Score text - perfectly centered */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ top: '20%' }}>
+          <div className={`font-bold ${size === 320 ? 'text-4xl' : 'text-2xl'} text-center`} style={{ color: getScoreColor(score) }}>
             {score}
           </div>
-          <div className={`font-medium text-gray-600 mt-1 ${size === 320 ? 'text-sm' : 'text-xs'}`}>
+          <div className={`font-medium text-gray-600 mt-1 ${size === 320 ? 'text-sm' : 'text-xs'} text-center`}>
             {getScoreLabel(score)}
           </div>
         </div>

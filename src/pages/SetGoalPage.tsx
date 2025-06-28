@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -175,6 +174,14 @@ const SetGoalPage = () => {
     mutationFn: async ({ amount, reason, type }: { amount: number; reason: string; type: 'add' | 'deduct' }) => {
       if (!user?.id || !emergencyFund) throw new Error('User not authenticated or no emergency fund');
 
+      // Validation: Check if deduction would make balance go below 0
+      if (type === 'deduct') {
+        const currentBalance = emergencyFund.current_balance || 0;
+        if (currentBalance - amount < 0) {
+          throw new Error('INSUFFICIENT_FUNDS');
+        }
+      }
+
       // Insert log entry
       const { error: logError } = await supabase
         .from('emergency_fund_log')
@@ -205,7 +212,11 @@ const SetGoalPage = () => {
     },
     onError: (error) => {
       console.error('Error updating emergency fund:', error);
-      toast.error('Failed to update emergency fund');
+      if (error.message === 'INSUFFICIENT_FUNDS') {
+        toast.error('🔴 Insufficient emergency funds – this transaction is invalid and cannot be logged.');
+      } else {
+        toast.error('Failed to update emergency fund');
+      }
     }
   });
 

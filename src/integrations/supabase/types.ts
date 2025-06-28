@@ -160,10 +160,10 @@ export type Database = {
           created_at: string
           id: string
           income_expectation: number | null
-          last_updated: string | null
           log_consistency: number | null
           max_spend_limit: number | null
           monthly_saving_goal: number | null
+          updated_at: string
           user_id: string | null
         }
         Insert: {
@@ -171,10 +171,10 @@ export type Database = {
           created_at?: string
           id?: string
           income_expectation?: number | null
-          last_updated?: string | null
           log_consistency?: number | null
           max_spend_limit?: number | null
           monthly_saving_goal?: number | null
+          updated_at?: string
           user_id?: string | null
         }
         Update: {
@@ -182,10 +182,10 @@ export type Database = {
           created_at?: string
           id?: string
           income_expectation?: number | null
-          last_updated?: string | null
           log_consistency?: number | null
           max_spend_limit?: number | null
           monthly_saving_goal?: number | null
+          updated_at?: string
           user_id?: string | null
         }
         Relationships: []
