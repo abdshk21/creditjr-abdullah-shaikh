@@ -110,7 +110,8 @@ const Dashboard = () => {
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
-  const monthlyIncome = goals?.income_expectation || 2000;
+  // Set default monthly allowance to 0 for new users
+  const monthlyIncome = goals?.income_expectation || 0;
   const savingsGoal = goals?.monthly_saving_goal || 500;
   
   // Fix savings calculation - only count actual savings (income - expenses), not just expenses
@@ -155,6 +156,18 @@ const Dashboard = () => {
 
   const creditScore = 680;
 
+  // Get welcome message - prefer username if available, otherwise use email
+  const getWelcomeMessage = () => {
+    if (user?.user_metadata?.display_name) {
+      return `Welcome ${user.user_metadata.display_name}`;
+    } else if (user?.user_metadata?.full_name) {
+      return `Welcome ${user.user_metadata.full_name}`;
+    } else if (user?.email) {
+      return `Welcome ${user.email}`;
+    }
+    return 'Welcome';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6 pb-24">
       {/* Confetti Component */}
@@ -182,36 +195,41 @@ const Dashboard = () => {
                 <p className="text-white/80 text-lg">By Tyche Online Academy</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              {user?.user_metadata?.avatar_url ? (
-                <img 
-                  src={user.user_metadata.avatar_url} 
-                  alt="Profile" 
-                  className="w-12 h-12 rounded-full border-2 border-white/20 cursor-pointer hover:border-white/40 transition-all"
+            <div className="flex items-center gap-4">
+              <div className="text-white/90 text-lg font-medium">
+                {getWelcomeMessage()}
+              </div>
+              <div className="flex items-center gap-3">
+                {user?.user_metadata?.avatar_url ? (
+                  <img 
+                    src={user.user_metadata.avatar_url} 
+                    alt="Profile" 
+                    className="w-12 h-12 rounded-full border-2 border-white/20 cursor-pointer hover:border-white/40 transition-all"
+                    onClick={() => navigate('/my-account')}
+                    onError={(e) => {
+                      // Fallback to default user icon if image fails to load
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                ) : null}
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => navigate('/my-account')}
-                  onError={(e) => {
-                    // Fallback to default user icon if image fails to load
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                  }}
-                />
-              ) : null}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/my-account')}
-                className={`text-white hover:bg-white/10 w-12 h-12 rounded-full ${user?.user_metadata?.avatar_url ? 'hidden' : ''}`}
-              >
-                <User className="h-6 w-6" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="text-white hover:bg-white/10 w-12 h-12 rounded-full"
-              >
-                <LogOut className="h-6 w-6" />
-              </Button>
+                  className={`text-white hover:bg-white/10 w-12 h-12 rounded-full ${user?.user_metadata?.avatar_url ? 'hidden' : ''}`}
+                >
+                  <User className="h-6 w-6" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="text-white hover:bg-white/10 w-12 h-12 rounded-full"
+                >
+                  <LogOut className="h-6 w-6" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -229,7 +247,7 @@ const Dashboard = () => {
               <PiggyBank className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">د.إ{monthlyIncome.toFixed(2)}</div>
+              <div className="text-2xl font-bold">{monthlyIncome.toFixed(2)} AED</div>
               <p className="text-xs text-white/80">Target for this month</p>
             </CardContent>
           </Card>
