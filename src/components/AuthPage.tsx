@@ -15,6 +15,7 @@ const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const navigate = useNavigate();
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -29,6 +30,7 @@ const AuthPage = () => {
           password,
         });
         if (error) throw error;
+        navigate('/');
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -38,14 +40,70 @@ const AuthPage = () => {
           }
         });
         if (error) throw error;
+        setShowEmailConfirmation(true);
       }
-      navigate('/');
     } catch (error: any) {
       setError(error.message);
     } finally {
       setLoading(false);
     }
   };
+
+  const handleEmailConfirmed = () => {
+    setShowEmailConfirmation(false);
+    setIsLogin(true);
+    setEmail('');
+    setPassword('');
+  };
+
+  if (showEmailConfirmation) {
+    return (
+      <div 
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{
+          backgroundImage: `url('/lovable-uploads/d0d73a79-f67b-4982-b5bf-afdf95d6b8b9.png')`,
+          backgroundRepeat: 'repeat',
+          backgroundSize: 'auto',
+          backgroundPosition: 'top left'
+        }}
+      >
+        <div className="w-full max-w-md">
+          <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur">
+            <CardHeader className="text-center space-y-4">
+              <div className="text-4xl mb-4">📩</div>
+              <CardTitle className="text-xl text-[#102c54]">
+                Confirm Your Email to Continue
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4 text-sm text-gray-700 leading-relaxed">
+                <p>1. Open your inbox for the email you used to sign up.</p>
+                <p>2. Find the confirmation email from Supabase Authentication.</p>
+                <p>3. Click on the "Confirm Your Mail" button in that email.</p>
+                <p>4. Once done, come back to this page and continue.</p>
+              </div>
+              
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-start space-x-2">
+                  <span className="text-yellow-600 text-lg">⚠️</span>
+                  <p className="text-sm text-yellow-800 font-medium">
+                    You must confirm your email before logging in.
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                onClick={handleEmailConfirmed}
+                className="w-full bg-[#d8a434] hover:bg-[#c19530] text-[#102c54] font-semibold py-3 rounded-lg shadow-lg transition-all transform hover:scale-[1.02]"
+              >
+                ✅ I've Verified My Email – Take Me to Login
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 
