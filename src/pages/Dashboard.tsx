@@ -138,11 +138,15 @@ const Dashboard = () => {
     };
   }).reverse();
 
+  // Enhanced category data processing for better pie chart accuracy
   const categoryData = monthlyTransactions
-    .filter(t => t.type === 'expense')
+    .filter(t => t.type === 'expense' && t.category && Number(t.amount) > 0)
     .reduce((acc: { name: string; value: number }[], t) => {
-      const category = t.category;
+      const category = t.category.trim();
       const amount = Number(t.amount);
+      
+      if (!category || amount <= 0) return acc;
+      
       const existingCategory = acc.find(item => item.name === category);
 
       if (existingCategory) {
@@ -152,7 +156,9 @@ const Dashboard = () => {
       }
 
       return acc;
-    }, []);
+    }, [])
+    .filter(item => item.value > 0)
+    .sort((a, b) => b.value - a.value);
 
   const creditScore = 680;
 
@@ -307,33 +313,47 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Category Breakdown */}
+          {/* Enhanced Category Breakdown Pie Chart */}
           <Card className="shadow-lg border-0 hover:shadow-2xl hover:scale-105 transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50">
             <CardHeader>
               <CardTitle className="text-[#102c54]">Spending by Category</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, value }) => `${name}: د.إ${Number(value).toFixed(0)}`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [`د.إ${Number(value).toFixed(2)}`, 'Amount']} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              {categoryData.length > 0 ? (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categoryData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, value, percent }) => 
+                          `${name}: د.إ${Number(value).toFixed(0)} (${(percent * 100).toFixed(0)}%)`
+                        }
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {categoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value: number) => [`د.إ${value.toFixed(2)}`, 'Amount']}
+                        labelFormatter={(label) => `Category: ${label}`}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-64 flex items-center justify-center">
+                  <div className="text-center text-gray-500">
+                    <p className="text-lg font-medium">No spending data yet</p>
+                    <p className="text-sm">Add some expense transactions to see your spending breakdown</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
