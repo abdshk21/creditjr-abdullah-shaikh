@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { getSelectedCurrency } from '@/lib/currency';
 
 interface Transaction {
   amount: number;
@@ -37,7 +38,7 @@ const AddTransaction = ({ onSave, onCancel }: AddTransactionProps) => {
   const [wallet, setWallet] = useState('');
 
   // Fetch custom categories
-  const { data: customCategories } = useQuery({
+  const { data: customCategories, isLoading, error } = useQuery({
     queryKey: ['custom_categories', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -50,12 +51,13 @@ const AddTransaction = ({ onSave, onCancel }: AddTransactionProps) => {
       
       if (error) {
         console.error('Error fetching custom categories:', error);
-        return [];
+        throw error;
       }
       
       return data || [];
     },
     enabled: !!user?.id,
+    refetchOnWindowFocus: false,
   });
 
   const defaultCategories = [
@@ -124,7 +126,7 @@ const AddTransaction = ({ onSave, onCancel }: AddTransactionProps) => {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Amount */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Amount (د.إ)</label>
+                <label className="text-sm font-medium text-gray-700">Amount ({getSelectedCurrency().symbol})</label>
                 <Input
                   type="number"
                   step="0.01"
