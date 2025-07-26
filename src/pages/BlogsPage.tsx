@@ -1,58 +1,43 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, BookOpen, Clock, User } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ArrowLeft, BookOpen, Clock, User, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Blog {
+  id: string;
+  title: string;
+  summary: string;
+  thumbnail_url: string;
+  content: string;
+  created_at: string;
+}
 
 const BlogsPage = () => {
   const navigate = useNavigate();
 
-  const blogPosts = [
-    {
-      id: 1,
-      title: "Essential Programming Skills for Financial Apps",
-      thumbnail: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6",
-      summary: "Learn the key programming concepts and technologies needed to build modern financial applications.",
-      author: "Tech Expert",
-      readTime: "5 min read",
-      date: "Jan 15, 2024"
+  // Fetch blog posts from Supabase
+  const { data: blogPosts, isLoading, error } = useQuery<Blog[]>({
+    queryKey: ['blogs'],
+    queryFn: async () => {
+      const response = await fetch('https://rwgnldyndqvcgdqvvanp.supabase.co/rest/v1/blogs?select=*&order=created_at.desc', {
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3Z25sZHluZHF2Y2dkcXZ2YW5wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4NjAwMTIsImV4cCI6MjA2NjQzNjAxMn0.iEZgiJGE__GKM35jblWjXD7mgNQdI3TpZdhSwRLqIOI',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3Z25sZHluZHF2Y2dkcXZ2YW5wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4NjAwMTIsImV4cCI6MjA2NjQzNjAxMn0.iEZgiJGE__GKM35jblWjXD7mgNQdI3TpZdhSwRLqIOI',
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch blogs');
+      }
+      
+      const data = await response.json();
+      return data as Blog[];
     },
-    {
-      id: 2,
-      title: "Building Secure Web Applications",
-      thumbnail: "https://images.unsplash.com/photo-1487058792275-0ad444038136",
-      summary: "Discover best practices for creating secure web applications that protect user data and financial information.",
-      author: "Security Specialist",
-      readTime: "7 min read",
-      date: "Jan 10, 2024"
-    },
-    {
-      id: 3,
-      title: "Modern Development Workflow for Finance Teams",
-      thumbnail: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158",
-      summary: "Streamline your development process with modern tools and practices tailored for financial technology.",
-      author: "DevOps Engineer",
-      readTime: "6 min read",
-      date: "Jan 8, 2024"
-    },
-    {
-      id: 4,
-      title: "Clean Code Principles for Financial Software",
-      thumbnail: "https://images.unsplash.com/photo-1498050108023-c5249f4df085",
-      summary: "Write maintainable and scalable code for financial applications with these proven principles.",
-      author: "Senior Developer",
-      readTime: "8 min read",
-      date: "Jan 5, 2024"
-    },
-    {
-      id: 5,
-      title: "The Future of Financial Technology",
-      thumbnail: "https://images.unsplash.com/photo-1470813740244-df37b8c1edcb",
-      summary: "Explore emerging trends and technologies that are shaping the future of financial services.",
-      author: "FinTech Analyst",
-      readTime: "4 min read",
-      date: "Jan 1, 2024"
-    }
-  ];
+  });
 
   return (
     <div className="min-h-screen bg-white p-6 pb-24">
@@ -70,59 +55,113 @@ const BlogsPage = () => {
           <h1 className="text-3xl font-bold text-[#102c54]">Blogs</h1>
         </div>
 
-        {/* Blog Posts */}
-        <div className="space-y-6">
-          {blogPosts.map((post) => (
-            <Card key={post.id} className="shadow-lg border-0 hover:shadow-xl transition-shadow duration-300 cursor-pointer">
-              <div className="relative">
-                <img 
-                  src={post.thumbnail} 
-                  alt={post.title}
-                  className="w-full h-48 object-cover rounded-t-lg"
-                />
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 text-xs text-gray-600">
-                  <Clock className="h-3 w-3" />
-                  {post.readTime}
-                </div>
-              </div>
-              
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xl text-[#102c54] line-clamp-2">
-                  {post.title}
-                </CardTitle>
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <div className="flex items-center gap-1">
-                    <User className="h-3 w-3" />
-                    {post.author}
-                  </div>
-                  <span>{post.date}</span>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="pt-0">
-                <p className="text-gray-600 leading-relaxed">
-                  {post.summary}
-                </p>
-                <Button 
-                  variant="ghost" 
-                  className="mt-4 p-0 h-auto text-[#102c54] hover:text-[#102c54]/80 font-medium"
-                >
-                  Read More →
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-[#102c54]" />
+            <span className="ml-2 text-gray-600">Loading blog posts...</span>
+          </div>
+        )}
 
-        {/* Coming Soon Note */}
-        <Card className="shadow-lg border-0 bg-gray-50">
-          <CardContent className="text-center p-6">
-            <BookOpen className="h-8 w-8 mx-auto mb-3 text-[#102c54]" />
-            <p className="text-gray-600">
-              More insightful articles coming soon! Stay tuned for expert tips on finance, technology, and personal development.
-            </p>
-          </CardContent>
-        </Card>
+        {/* Error State */}
+        {error && (
+          <Card className="shadow-lg border-0 bg-red-50">
+            <CardContent className="text-center p-8">
+              <div className="text-4xl mb-4">⚠️</div>
+              <div className="text-xl font-semibold text-red-700 mb-2">
+                Unable to load blog posts
+              </div>
+              <div className="text-red-600">
+                Please try again later or contact support if the problem persists.
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && !error && blogPosts && blogPosts.length === 0 && (
+          <Card className="shadow-lg border-0">
+            <CardContent className="text-center p-8">
+              <div className="text-6xl mb-6">📝</div>
+              <div className="text-xl font-semibold text-gray-700 mb-4">
+                No blog posts available yet
+              </div>
+              <div className="text-gray-600">
+                Check back soon for insightful articles on finance, technology, and personal development!
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Blog Posts */}
+        {!isLoading && !error && blogPosts && blogPosts.length > 0 && (
+          <div className="space-y-6">
+            {blogPosts.map((post) => (
+              <Card key={post.id} className="shadow-lg border-0 hover:shadow-xl transition-shadow duration-300">
+                <div className="relative">
+                  <img 
+                    src={post.thumbnail_url} 
+                    alt={post.title}
+                    className="w-full h-48 object-cover rounded-t-lg"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6';
+                    }}
+                  />
+                </div>
+                
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xl text-[#102c54] line-clamp-2">
+                    {post.title}
+                  </CardTitle>
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {new Date(post.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="pt-0">
+                  <p className="text-gray-600 leading-relaxed mb-4">
+                    {post.summary}
+                  </p>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        className="p-0 h-auto text-[#102c54] hover:text-[#102c54]/80 font-medium"
+                      >
+                        Read More →
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle className="text-2xl text-[#102c54] pr-8">
+                          {post.title}
+                        </DialogTitle>
+                      </DialogHeader>
+                      <div className="mt-4">
+                        <img 
+                          src={post.thumbnail_url} 
+                          alt={post.title}
+                          className="w-full h-64 object-cover rounded-lg mb-6"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6';
+                          }}
+                        />
+                        <div 
+                          className="prose prose-lg max-w-none"
+                          dangerouslySetInnerHTML={{ __html: post.content || post.summary }}
+                        />
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
       </div>
     </div>
   );
