@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Loader2, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const AuthPage = () => {
@@ -16,6 +16,8 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
   const navigate = useNavigate();
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -55,6 +57,78 @@ const AuthPage = () => {
     setEmail('');
     setPassword('');
   };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError('Please enter your email address first');
+      return;
+    }
+    
+    setLoading(true);
+    setError('');
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/`
+      });
+      if (error) throw error;
+      
+      setResetMessage('Check your email for a password reset link!');
+      setShowForgotPassword(true);
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (showForgotPassword) {
+    return (
+      <div 
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{
+          backgroundImage: `url('/lovable-uploads/d0d73a79-f67b-4982-b5bf-afdf95d6b8b9.png')`,
+          backgroundRepeat: 'repeat',
+          backgroundSize: 'auto',
+          backgroundPosition: 'top left'
+        }}
+      >
+        <div className="w-full max-w-md">
+          <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur">
+            <CardHeader className="text-center space-y-4">
+              <div className="text-4xl mb-4">🔑</div>
+              <CardTitle className="text-xl text-[#102c54]">
+                Reset Password
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="text-center">
+                <p className="text-sm text-gray-700 mb-4">
+                  Enter your email to receive a password reset link.
+                </p>
+                {resetMessage && (
+                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+                    {resetMessage}
+                  </div>
+                )}
+              </div>
+              
+              <Button
+                onClick={() => {
+                  setShowForgotPassword(false);
+                  setResetMessage('');
+                  setError('');
+                }}
+                className="w-full bg-[#d8a434] hover:bg-[#c19530] text-[#102c54] font-semibold py-3 rounded-lg shadow-lg transition-all transform hover:scale-[1.02]"
+              >
+                Back to Login
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   if (showEmailConfirmation) {
     return (
@@ -188,15 +262,15 @@ const AuthPage = () => {
                 </Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    className="pl-10 pr-10 border-gray-300 focus:border-[#d8a434] focus:ring-[#d8a434]"
-                    required
-                  />
+                   <Input
+                     id="password"
+                     type={showPassword ? 'text' : 'password'}
+                     value={password}
+                     onChange={(e) => setPassword(e.target.value)}
+                     placeholder={isLogin ? "Enter your password" : "Create your password"}
+                     className="pl-10 pr-10 border-gray-300 focus:border-[#d8a434] focus:ring-[#d8a434]"
+                     required
+                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
@@ -204,10 +278,32 @@ const AuthPage = () => {
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
-                </div>
-              </div>
+                 </div>
+                 
+                 {/* Password Rules Info for Signup */}
+                 {!isLogin && (
+                   <div className="flex items-center space-x-2 text-xs text-gray-500">
+                     <Info className="h-3 w-3" />
+                     <span>Password must be at least 6 characters</span>
+                   </div>
+                 )}
+                 
+                 {/* Forgot Password Link for Login */}
+                 {isLogin && (
+                   <div className="text-right">
+                     <button
+                       type="button"
+                       onClick={handleForgotPassword}
+                       className="text-xs text-[#d8a434] hover:text-[#c19530] font-medium"
+                       disabled={loading}
+                     >
+                       Forgot your password?
+                     </button>
+                   </div>
+                 )}
+               </div>
 
-              {/* Submit Button */}
+               {/* Submit Button */}
               <Button
                 type="submit"
                 disabled={loading}
