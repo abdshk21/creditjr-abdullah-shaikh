@@ -1,9 +1,12 @@
 
 import { useState } from 'react';
-import { Home, Plus, Target, TrendingUp, Brain, Menu, X, LogOut } from 'lucide-react';
+import { Home, Plus, Target, TrendingUp, Brain, Menu, X, LogOut, User, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 
 interface NavigationProps {
   currentPage: string;
@@ -13,9 +16,11 @@ interface NavigationProps {
 const Navigation = ({ currentPage, onPageChange }: NavigationProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    navigate('/auth');
   };
 
   const navItems = [
@@ -81,18 +86,63 @@ const Navigation = ({ currentPage, onPageChange }: NavigationProps) => {
 
           {/* User info and logout */}
           <div className="border-t border-white/20 pt-4">
-            <div className="text-sm text-white/60 mb-2">
-              {user?.email}
-            </div>
-            <Button
-              onClick={handleLogout}
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start text-white/80 hover:bg-white/10 hover:text-white"
-            >
-              <LogOut size={16} className="mr-2" />
-              Sign Out
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-between text-white/80 hover:bg-white/10 hover:text-white mb-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <User size={16} />
+                    <span className="text-sm truncate">{user?.email}</span>
+                  </div>
+                  <ChevronDown size={14} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 bg-white border border-gray-200 shadow-lg">
+                <DropdownMenuItem 
+                  onClick={() => onPageChange('account')}
+                  className="cursor-pointer"
+                >
+                  <User size={14} className="mr-2" />
+                  My Account
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  disabled
+                  className="cursor-not-allowed opacity-50"
+                >
+                  <User size={14} className="mr-2" />
+                  Switch Account (Coming Soon)
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={handleLogout}
+                  className="cursor-pointer text-red-600 focus:text-red-600"
+                >
+                  <LogOut size={14} className="mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={handleLogout}
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start text-white/80 hover:bg-white/10 hover:text-white"
+                >
+                  <LogOut size={16} className="mr-2" />
+                  Sign Out
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Sign out of your account</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>

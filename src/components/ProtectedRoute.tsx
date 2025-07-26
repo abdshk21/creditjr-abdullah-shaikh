@@ -1,6 +1,7 @@
 
 import { useAuth } from '@/hooks/useAuth';
-import AuthPage from './AuthPage';
+import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -8,6 +9,13 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
 
   if (loading) {
     return (
@@ -18,7 +26,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   if (!user) {
-    return <AuthPage />;
+    return null; // Will redirect to /auth
   }
 
   return <>{children}</>;

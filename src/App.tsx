@@ -18,6 +18,7 @@ import LearnPage from "./pages/LearnPage";
 import QuizPage from "./pages/QuizPage";
 import MyAccountPage from "./pages/MyAccountPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import AuthPage from "./components/AuthPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
         <AuthProvider>
           <div className="min-h-screen bg-white">
             <Routes>
+              <Route path="/auth" element={<AuthPage />} />
               <Route path="/" element={
                 <ProtectedRoute>
                   <Dashboard />
