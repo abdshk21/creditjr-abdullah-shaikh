@@ -49,11 +49,22 @@ const AuthPage = () => {
             emailRedirectTo: `${window.location.origin}/`
           }
         });
-        if (error) throw error;
+        if (error) {
+          // Handle user already exists error
+          if (error.message.includes('User already registered') || error.message.includes('already been registered')) {
+            setError('An account with this email already exists. Please log in instead.');
+          } else {
+            setError(error.message);
+          }
+          throw error;
+        }
         setShowEmailConfirmation(true);
       }
     } catch (error: any) {
-      setError(error.message);
+      // Error already handled above for signup, this is for login errors
+      if (isLogin && error.message) {
+        setError(error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -240,6 +251,17 @@ const AuthPage = () => {
             {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                 {error}
+                {error.includes('An account with this email already exists') && (
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsLogin(true)}
+                      className="text-[#d8a434] hover:text-[#c19530] font-medium underline"
+                    >
+                      Already have an account? Log in here.
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
