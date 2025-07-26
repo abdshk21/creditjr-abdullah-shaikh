@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Phone, Mail, Clock } from "lucide-react";
+import { Mail, Clock } from "lucide-react";
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
@@ -161,15 +161,7 @@ const ContactPage = () => {
                   <Mail className="h-5 w-5 text-[#102c54]" />
                   <div>
                     <p className="font-medium">Email</p>
-                    <p className="text-gray-600">support@creditjr.com</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-3">
-                  <Phone className="h-5 w-5 text-[#102c54]" />
-                  <div>
-                    <p className="font-medium">Phone</p>
-                    <p className="text-gray-600">+971-XXX-XXX-XXX</p>
+                    <p className="text-gray-600">tycheonlineacademy@gmail.com</p>
                   </div>
                 </div>
 
@@ -188,7 +180,7 @@ const ContactPage = () => {
               <CardContent className="pt-6">
                 <h3 className="font-medium mb-2">Need immediate help?</h3>
                 <p className="text-gray-600 text-sm">
-                  For urgent matters, please email us directly at support@creditjr.com 
+                  For urgent matters, please email us directly at tycheonlineacademy@gmail.com 
                   and we'll prioritize your request.
                 </p>
               </CardContent>
