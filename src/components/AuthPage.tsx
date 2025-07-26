@@ -41,16 +41,15 @@ const AuthPage = () => {
         });
         if (error) throw error;
         navigate('/');
-      } else {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
+        } else {
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
             emailRedirectTo: `${window.location.origin}/`
           }
         });
-
-// Supabase may return both `data.user` and `error` as null if the user already exists.
+      
         if (error) {
           if (
             error.message.toLowerCase().includes('already registered') ||
@@ -58,18 +57,19 @@ const AuthPage = () => {
             error.message.toLowerCase().includes('email')  // Covers generic duplicate email cases
           ) {
             setError('An account with this email already exists. Please log in instead.');
+            return;
           } else {
             setError(error.message);
+            return;
           }
-          throw error;
         }
-
-        if (!data.user) {
-          // This can happen silently if email is already registered and Supabase doesn't throw.
+      
+        // Just in case: fallback if no error is thrown but no user is created
+        if (!data?.user) {
           setError('An account with this email already exists. Please log in instead.');
           return;
         }
-
+      
         setShowEmailConfirmation(true);
 
         
