@@ -14,7 +14,7 @@ import TransactionHistoryPage from "./pages/TransactionHistoryPage";
 import SetGoalPage from "./pages/SetGoalPage";
 import MyScorePage from "./pages/MyScorePage";
 import RecommendationsPage from "./pages/RecommendationsPage";
-import LearnPage from "./pages/LearnPage";
+import BlogsPage from "./pages/BlogsPage";
 import QuizPage from "./pages/QuizPage";
 import MyAccountPage from "./pages/MyAccountPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -75,9 +75,9 @@ const App = () => (
                   <FinBuddy />
                 </ProtectedRoute>
               } />
-              <Route path="/learn" element={
+              <Route path="/blogs" element={
                 <ProtectedRoute>
-                  <LearnPage />
+                  <BlogsPage />
                   <BottomNavigation />
                   <FinBuddy />
                 </ProtectedRoute>

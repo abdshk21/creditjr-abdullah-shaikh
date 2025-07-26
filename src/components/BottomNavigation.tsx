@@ -33,10 +33,10 @@ const BottomNavigation = () => {
       path: '/my-score'
     },
     {
-      id: 'learn',
-      label: 'Learn',
+      id: 'blogs',
+      label: 'Blogs',
       icon: BookOpen,
-      path: '/learn'
+      path: '/blogs'
     },
     {
       id: 'quiz',
