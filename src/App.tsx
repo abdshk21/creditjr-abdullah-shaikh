@@ -17,6 +17,7 @@ import RecommendationsPage from "./pages/RecommendationsPage";
 import LearnPage from "./pages/LearnPage";
 import QuizPage from "./pages/QuizPage";
 import MyAccountPage from "./pages/MyAccountPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -93,6 +94,7 @@ const App = () => (
                   <FinBuddy />
                 </ProtectedRoute>
               } />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
