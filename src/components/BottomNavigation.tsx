@@ -1,6 +1,6 @@
 
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, History, Target, Award, Lightbulb, BookOpen, Brain } from 'lucide-react';
+import { LayoutDashboard, History, Target, Award, Lightbulb, BookOpen, Brain, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const BottomNavigation = () => {
@@ -49,6 +49,12 @@ const BottomNavigation = () => {
       label: 'Tips',
       icon: Lightbulb,
       path: '/recommendations'
+    },
+    {
+      id: 'contact',
+      label: 'Contact',
+      icon: MessageSquare,
+      path: '/contact'
     }
   ];
 
