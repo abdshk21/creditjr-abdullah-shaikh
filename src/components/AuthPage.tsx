@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Loader2, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const AuthPage = () => {
@@ -16,6 +16,8 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
   const navigate = useNavigate();
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -39,9 +41,35 @@ const AuthPage = () => {
             emailRedirectTo: `${window.location.origin}/`
           }
         });
-        if (error) throw error;
-        setShowEmailConfirmation(true);
+        if (error) {
+          // Handle duplicate email error specifically
+          if (error.message.includes('already registered') || error.message.includes('already exists')) {
+            setError('❌ An account with this email already exists. Please log in instead.');
+          } else {
+            throw error;
+          }
+        } else {
+          setShowEmailConfirmation(true);
+        }
       }
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/`
+      });
+      if (error) throw error;
+      setResetEmailSent(true);
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -55,6 +83,106 @@ const AuthPage = () => {
     setEmail('');
     setPassword('');
   };
+
+  // Password Reset View
+  if (showPasswordReset) {
+    return (
+      <div 
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{
+          backgroundImage: `url('/lovable-uploads/d0d73a79-f67b-4982-b5bf-afdf95d6b8b9.png')`,
+          backgroundRepeat: 'repeat',
+          backgroundSize: 'auto',
+          backgroundPosition: 'top left'
+        }}
+      >
+        <div className="w-full max-w-md">
+          <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur">
+            <CardHeader className="text-center space-y-4">
+              <div className="text-4xl mb-4">🔑</div>
+              <CardTitle className="text-xl text-[#102c54]">
+                {resetEmailSent ? 'Reset Email Sent!' : 'Reset Your Password'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {resetEmailSent ? (
+                <>
+                  <div className="space-y-4 text-sm text-gray-700 leading-relaxed">
+                    <p>✅ We've sent a password reset link to your email.</p>
+                    <p>Please check your inbox and follow the instructions to reset your password.</p>
+                  </div>
+                  <Button
+                    onClick={() => {
+                      setShowPasswordReset(false);
+                      setResetEmailSent(false);
+                      setIsLogin(true);
+                    }}
+                    className="w-full bg-[#d8a434] hover:bg-[#c19530] text-[#102c54] font-semibold py-3 rounded-lg shadow-lg transition-all transform hover:scale-[1.02]"
+                  >
+                    Back to Login
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-gray-700">Enter your email to receive a password reset link.</p>
+                  
+                  {error && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                      {error}
+                    </div>
+                  )}
+
+                  <form onSubmit={handlePasswordReset} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="reset-email" className="text-[#102c54] font-medium">
+                        Email
+                      </Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                        <Input
+                          id="reset-email"
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="Enter your email"
+                          className="pl-10 border-gray-300 focus:border-[#d8a434] focus:ring-[#d8a434]"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-[#d8a434] hover:bg-[#c19530] text-[#102c54] font-semibold py-3 rounded-lg shadow-lg transition-all transform hover:scale-[1.02] disabled:scale-100"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending reset email...
+                        </>
+                      ) : (
+                        'Send Reset Link'
+                      )}
+                    </Button>
+                  </form>
+
+                  <div className="text-center">
+                    <button
+                      onClick={() => setShowPasswordReset(false)}
+                      className="text-[#d8a434] hover:text-[#c19530] font-medium text-sm"
+                    >
+                      Back to Login
+                    </button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   if (showEmailConfirmation) {
     return (
@@ -193,7 +321,7 @@ const AuthPage = () => {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
+                    placeholder={isLogin ? "Enter your password" : "Create your password"}
                     className="pl-10 pr-10 border-gray-300 focus:border-[#d8a434] focus:ring-[#d8a434]"
                     required
                   />
@@ -205,6 +333,27 @@ const AuthPage = () => {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+                
+                {/* Password Requirements for Signup */}
+                {!isLogin && (
+                  <div className="flex items-center space-x-2 text-xs text-gray-600">
+                    <Info className="h-3 w-3" />
+                    <span>🔒 Password must be at least 6 characters</span>
+                  </div>
+                )}
+                
+                {/* Forgot Password Link for Login */}
+                {isLogin && (
+                  <div className="text-right">
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswordReset(true)}
+                      className="text-xs text-[#d8a434] hover:text-[#c19530] font-medium"
+                    >
+                      🔗 Forgot your password?
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Submit Button */}
