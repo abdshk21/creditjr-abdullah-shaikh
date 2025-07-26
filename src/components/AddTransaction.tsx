@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { CalendarIcon, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 interface Transaction {
   amount: number;
@@ -26,17 +29,50 @@ interface AddTransactionProps {
 }
 
 const AddTransaction = ({ onSave, onCancel }: AddTransactionProps) => {
+  const { user } = useAuth();
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [note, setNote] = useState('');
   const [date, setDate] = useState<Date>(new Date());
   const [wallet, setWallet] = useState('');
 
-  const categories = [
-    { value: 'Sports', label: 'Sports' },
-    { value: 'Food', label: 'Food' },
-    { value: 'Electronic', label: 'Electronic' },
-    { value: 'Payday', label: 'Payday' }
+  // Fetch custom categories
+  const { data: customCategories } = useQuery({
+    queryKey: ['custom_categories', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('custom_categories')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching custom categories:', error);
+        return [];
+      }
+      
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  const defaultCategories = [
+    { value: 'Sports', label: 'Sports', icon: '⚽' },
+    { value: 'Food', label: 'Food', icon: '🍽️' },
+    { value: 'Electronic', label: 'Electronic', icon: '📱' },
+    { value: 'Payday', label: 'Payday', icon: '💰' }
+  ];
+
+  // Combine default and custom categories
+  const allCategories = [
+    ...defaultCategories,
+    ...(customCategories?.map(cat => ({ 
+      value: cat.name, 
+      label: cat.name, 
+      icon: cat.icon 
+    })) || [])
   ];
 
   const wallets = [
@@ -108,9 +144,12 @@ const AddTransaction = ({ onSave, onCancel }: AddTransactionProps) => {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((cat) => (
+                    {allCategories.map((cat) => (
                       <SelectItem key={cat.value} value={cat.value}>
-                        {cat.label}
+                        <span className="flex items-center gap-2">
+                          <span>{cat.icon}</span>
+                          <span>{cat.label}</span>
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>

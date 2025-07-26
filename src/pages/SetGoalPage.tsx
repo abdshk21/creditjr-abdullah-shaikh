@@ -36,7 +36,13 @@ const SetGoalPage = () => {
   const [envelopeTarget, setEnvelopeTarget] = useState('');
   const [envelopeDialogOpen, setEnvelopeDialogOpen] = useState(false);
 
-  const envelopeCategories = [
+  // Custom Category states
+  const [addCategoryDialogOpen, setAddCategoryDialogOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryIcon, setNewCategoryIcon] = useState('📦');
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+
+  const defaultCategories = [
     { name: 'Food', icon: '🍽️' },
     { name: 'Transport', icon: '🚗' },
     { name: 'Education', icon: '📚' },
@@ -134,6 +140,28 @@ const SetGoalPage = () => {
     enabled: !!user?.id,
   });
 
+  // Fetch custom categories
+  const { data: customCategories } = useQuery({
+    queryKey: ['custom_categories', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('custom_categories')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching custom categories:', error);
+        return [];
+      }
+      
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
   // Emergency Fund Mutations
   const setEmergencyFundTargetMutation = useMutation({
     mutationFn: async (targetAmount: number) => {
@@ -220,6 +248,56 @@ const SetGoalPage = () => {
     }
   });
 
+  // Custom Category Mutations
+  const createCustomCategoryMutation = useMutation({
+    mutationFn: async ({ name, icon }: { name: string; icon: string }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('custom_categories')
+        .insert({
+          user_id: user.id,
+          name: name,
+          icon: icon
+        });
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['custom_categories', user?.id] });
+      toast.success('Custom category created successfully');
+    },
+    onError: (error) => {
+      console.error('Error creating custom category:', error);
+      if (error.message?.includes('duplicate key')) {
+        toast.error('Category name already exists');
+      } else {
+        toast.error('Failed to create custom category');
+      }
+    }
+  });
+
+  const deleteCustomCategoryMutation = useMutation({
+    mutationFn: async (categoryId: string) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('custom_categories')
+        .delete()
+        .eq('id', categoryId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['custom_categories', user?.id] });
+      toast.success('Custom category deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Error deleting custom category:', error);
+      toast.error('Failed to delete custom category');
+    }
+  });
+
   // Envelope Mutations
   const setEnvelopeTargetMutation = useMutation({
     mutationFn: async ({ category, targetAmount }: { category: string; targetAmount: number }) => {
@@ -281,6 +359,12 @@ const SetGoalPage = () => {
     const envelope = envelopes?.find(env => env.category === category);
     return envelope?.target_amount || 0;
   };
+
+  // Combine default and custom categories
+  const allCategories = [
+    ...defaultCategories,
+    ...(customCategories?.map(cat => ({ name: cat.name, icon: cat.icon })) || [])
+  ];
 
   // Set the input values when existing goals are loaded
   useEffect(() => {
@@ -737,19 +821,35 @@ const SetGoalPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="grid grid-cols-2 gap-4">
-                  {envelopeCategories.map((category) => {
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  {allCategories.map((category) => {
                     const progress = getProgressPercentage(category.name);
                     const spent = getCurrentMonthSpending(category.name);
                     const target = getEnvelopeTarget(category.name);
+                    const isCustom = customCategories?.some(cat => cat.name === category.name);
                     
                     return (
                       <div
                         key={category.name}
                         onClick={() => handleEnvelopeClick(category.name)}
-                        className="cursor-pointer group"
+                        className="cursor-pointer group relative"
                       >
                         <div className="bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-purple-300 hover:shadow-md transition-all duration-200 group-hover:scale-105">
+                          {isCustom && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const customCat = customCategories?.find(cat => cat.name === category.name);
+                                if (customCat) {
+                                  deleteCustomCategoryMutation.mutate(customCat.id);
+                                }
+                              }}
+                              className="absolute top-1 right-1 text-red-500 hover:text-red-700 text-xs"
+                              title="Delete custom category"
+                            >
+                              ✕
+                            </button>
+                          )}
                           <div className="text-center">
                             <div className="text-4xl mb-2">{category.icon}</div>
                             <div className="text-sm font-medium text-gray-700 mb-2">{category.name}</div>
@@ -775,6 +875,96 @@ const SetGoalPage = () => {
                     );
                   })}
                 </div>
+
+                {/* Add Category Button */}
+                <Dialog open={addCategoryDialogOpen} onOpenChange={setAddCategoryDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className="w-full border-dashed border-2 border-purple-300 text-purple-600 hover:bg-purple-50"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Category
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create Custom Category</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="category-name">Category Name</Label>
+                        <Input
+                          id="category-name"
+                          value={newCategoryName}
+                          onChange={(e) => setNewCategoryName(e.target.value)}
+                          placeholder="e.g., Groceries, Trip, Hobbies"
+                          maxLength={20}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="category-icon">Icon</Label>
+                        <div className="flex gap-2 flex-wrap">
+                          {['🛒', '✈️', '🎨', '📚', '🎮', '☕', '🏠', '👕', '💄', '🚗'].map((icon) => (
+                            <button
+                              key={icon}
+                              type="button"
+                              onClick={() => setNewCategoryIcon(icon)}
+                              className={`text-2xl p-2 rounded border-2 hover:bg-gray-50 ${
+                                newCategoryIcon === icon ? 'border-purple-500 bg-purple-50' : 'border-gray-200'
+                              }`}
+                            >
+                              {icon}
+                            </button>
+                          ))}
+                        </div>
+                        <Input
+                          id="category-icon"
+                          value={newCategoryIcon}
+                          onChange={(e) => setNewCategoryIcon(e.target.value)}
+                          placeholder="Or enter custom emoji"
+                          maxLength={2}
+                          className="mt-2"
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => {
+                            setAddCategoryDialogOpen(false);
+                            setNewCategoryName('');
+                            setNewCategoryIcon('📦');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={() => {
+                            if (!newCategoryName.trim()) {
+                              toast.error('Please enter a category name');
+                              return;
+                            }
+                            if (allCategories.some(cat => cat.name.toLowerCase() === newCategoryName.toLowerCase())) {
+                              toast.error('Category name already exists');
+                              return;
+                            }
+                            createCustomCategoryMutation.mutate({
+                              name: newCategoryName.trim(),
+                              icon: newCategoryIcon
+                            });
+                            setAddCategoryDialogOpen(false);
+                            setNewCategoryName('');
+                            setNewCategoryIcon('📦');
+                          }}
+                          className="bg-purple-600 hover:bg-purple-700"
+                          disabled={createCustomCategoryMutation.isPending}
+                        >
+                          {createCustomCategoryMutation.isPending ? 'Creating...' : 'Create Category'}
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </CardContent>
             </Card>
           </div>
