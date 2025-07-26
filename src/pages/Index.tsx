@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Home, Plus } from 'lucide-react';
 import AddTransaction from '@/components/AddTransaction';
 import RecentTransactions from '@/components/RecentTransactions';
+import { formatCurrency } from '@/lib/currency';
 
 interface Transaction {
   id: string;
@@ -86,7 +87,7 @@ const Index = () => {
               <CardTitle className="text-sm font-medium opacity-90">Orange Wallet</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{walletBalance} د.إ</div>
+              <div className="text-2xl font-bold">{formatCurrency(walletBalance)}</div>
             </CardContent>
           </Card>
 
@@ -107,7 +108,7 @@ const Index = () => {
               <CardTitle className="text-sm font-medium opacity-90">Inflows</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl font-bold">+{totalInflows} د.إ</div>
+              <div className="text-xl font-bold">+{formatCurrency(totalInflows)}</div>
             </CardContent>
           </Card>
 
@@ -116,7 +117,7 @@ const Index = () => {
               <CardTitle className="text-sm font-medium opacity-90">Outflows</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl font-bold">-{totalOutflows} د.إ</div>
+              <div className="text-xl font-bold">-{formatCurrency(totalOutflows)}</div>
             </CardContent>
           </Card>
         </div>

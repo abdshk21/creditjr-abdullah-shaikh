@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { DollarSign, TrendingDown, TrendingUp, Target } from 'lucide-react';
+import { formatCurrency } from '@/lib/currency';
 
 interface Expense {
   id: string;
@@ -44,7 +45,7 @@ const Dashboard = ({ expenses, monthlyBudget }: DashboardProps) => {
             <Target className="h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${monthlyBudget}</div>
+            <div className="text-2xl font-bold">{formatCurrency(monthlyBudget)}</div>
           </CardContent>
         </Card>
 
@@ -54,7 +55,7 @@ const Dashboard = ({ expenses, monthlyBudget }: DashboardProps) => {
             <TrendingDown className="h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalSpent.toFixed(2)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(totalSpent)}</div>
           </CardContent>
         </Card>
 
@@ -64,7 +65,7 @@ const Dashboard = ({ expenses, monthlyBudget }: DashboardProps) => {
             <DollarSign className="h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${remainingBudget.toFixed(2)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(remainingBudget)}</div>
           </CardContent>
         </Card>
 
@@ -88,7 +89,7 @@ const Dashboard = ({ expenses, monthlyBudget }: DashboardProps) => {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Monthly Spending</span>
-                <span>${totalSpent.toFixed(2)} / ${monthlyBudget}</span>
+                <span>{formatCurrency(totalSpent)} / {formatCurrency(monthlyBudget)}</span>
               </div>
               <Progress 
                 value={budgetProgress} 
@@ -97,8 +98,8 @@ const Dashboard = ({ expenses, monthlyBudget }: DashboardProps) => {
             </div>
             <div className="text-sm text-muted-foreground">
               {remainingBudget > 0 
-                ? `You have $${remainingBudget.toFixed(2)} left this month!`
-                : `You're $${Math.abs(remainingBudget).toFixed(2)} over budget this month.`
+                ? `You have ${formatCurrency(remainingBudget)} left this month!`
+                : `You're ${formatCurrency(Math.abs(remainingBudget))} over budget this month.`
               }
             </div>
           </CardContent>
@@ -113,7 +114,7 @@ const Dashboard = ({ expenses, monthlyBudget }: DashboardProps) => {
               {Object.entries(categoryTotals).map(([category, amount]) => (
                 <div key={category} className="flex justify-between items-center">
                   <span className="text-sm font-medium">{category}</span>
-                  <span className="text-sm text-muted-foreground">${amount.toFixed(2)}</span>
+                  <span className="text-sm text-muted-foreground">{formatCurrency(amount)}</span>
                 </div>
               ))}
               {Object.keys(categoryTotals).length === 0 && (
@@ -136,7 +137,7 @@ const Dashboard = ({ expenses, monthlyBudget }: DashboardProps) => {
                   <p className="font-medium">{expense.description}</p>
                   <p className="text-sm text-muted-foreground">{expense.category} • {expense.date}</p>
                 </div>
-                <span className="font-bold text-red-600">-${expense.amount.toFixed(2)}</span>
+                <span className="font-bold text-red-600">-{formatCurrency(expense.amount)}</span>
               </div>
             ))}
             {recentExpenses.length === 0 && (

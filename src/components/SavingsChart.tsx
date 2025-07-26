@@ -1,5 +1,6 @@
 
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, ReferenceLine } from 'recharts';
+import { formatCurrency } from '@/lib/currency';
 
 interface SavingsChartProps {
   actualSavings: number;
@@ -38,7 +39,7 @@ const SavingsChart = ({ actualSavings, savingsGoal }: SavingsChartProps) => {
           <XAxis dataKey="name" />
           <YAxis domain={[minValue - padding, maxValue + padding]} />
           <ReferenceLine y={0} stroke="#666" strokeWidth={2} strokeDasharray="2 2" />
-          <Tooltip formatter={(value) => [`د.إ${Number(value).toFixed(2)}`, 'Amount']} />
+          <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Amount']} />
           <Bar dataKey="value" radius={[4, 4, 0, 0]}>
             {data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={getBarColor(entry)} />

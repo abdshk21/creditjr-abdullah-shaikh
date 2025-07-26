@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { PiggyBank, TrendingUp, CreditCard, Award, Target, User, LogOut, Plus } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PiggyBank, TrendingUp, CreditCard, Award, Target, User, LogOut, Plus, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,6 +13,7 @@ import Confetti from '@/components/Confetti';
 import SavingsChart from '@/components/SavingsChart';
 import FloatingAddButton from '@/components/FloatingAddButton';
 import CreditScoreWidget from '@/components/CreditScoreWidget';
+import { formatCurrency, CURRENCIES, getSelectedCurrency, setSelectedCurrency } from '@/lib/currency';
 
 interface Transaction {
   id: string;
@@ -34,6 +36,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [showConfetti, setShowConfetti] = useState(false);
   const [celebrationMessage, setCelebrationMessage] = useState('');
+  const [selectedCurrency, setSelectedCurrencyState] = useState(getSelectedCurrency().code);
 
   const { data: transactions = [] } = useQuery({
     queryKey: ['transactions', user?.id],
@@ -85,7 +88,7 @@ const Dashboard = () => {
       
       if (latestTransaction.type === 'income' && transactionDate > fiveSecondsAgo) {
         setShowConfetti(true);
-        setCelebrationMessage(`Nice! You earned some extra د.إ today!`);
+        setCelebrationMessage(`Nice! You earned some extra money today!`);
         
         setTimeout(() => {
           setCelebrationMessage('');
@@ -240,7 +243,40 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <h2 className="text-3xl font-bold text-[#102c54]">Your Financial Dashboard</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold text-[#102c54]">Your Financial Dashboard</h2>
+          
+          {/* Currency Selector */}
+          <Card className="w-64">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Globe className="h-5 w-5 text-[#102c54]" />
+                <div className="space-y-1 flex-1">
+                  <label className="text-sm font-medium text-[#102c54]">Currency</label>
+                  <Select 
+                    value={selectedCurrency} 
+                    onValueChange={(value) => {
+                      setSelectedCurrency(value);
+                      setSelectedCurrencyState(value);
+                      window.location.reload(); // Refresh to update all currency displays
+                    }}
+                  >
+                    <SelectTrigger className="h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CURRENCIES.map((currency) => (
+                        <SelectItem key={currency.code} value={currency.code}>
+                          {currency.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Enhanced Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -253,7 +289,7 @@ const Dashboard = () => {
               <PiggyBank className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{monthlyIncome.toFixed(2)} AED</div>
+              <div className="text-2xl font-bold">{formatCurrency(monthlyIncome)}</div>
               <p className="text-xs text-white/80">Target for this month</p>
             </CardContent>
           </Card>
@@ -267,7 +303,7 @@ const Dashboard = () => {
               <TrendingUp className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">د.إ{totalIncome.toFixed(2)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(totalIncome)}</div>
               <p className="text-xs text-white/80">This month</p>
             </CardContent>
           </Card>
@@ -281,7 +317,7 @@ const Dashboard = () => {
               <CreditCard className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">د.إ{totalExpenses.toFixed(2)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(totalExpenses)}</div>
               <p className="text-xs text-white/80">This month</p>
             </CardContent>
           </Card>
@@ -305,7 +341,7 @@ const Dashboard = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip formatter={(value) => [`د.إ${Number(value).toFixed(2)}`, 'Expenses']} />
+                    <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Expenses']} />
                     <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={3} />
                   </LineChart>
                 </ResponsiveContainer>
@@ -329,7 +365,7 @@ const Dashboard = () => {
                         cy="50%"
                         labelLine={false}
                         label={({ name, value, percent }) => 
-                          `${name}: د.إ${Number(value).toFixed(0)} (${(percent * 100).toFixed(0)}%)`
+                          `${name}: ${formatCurrency(Number(value))} (${(percent * 100).toFixed(0)}%)`
                         }
                         outerRadius={80}
                         fill="#8884d8"
@@ -340,7 +376,7 @@ const Dashboard = () => {
                         ))}
                       </Pie>
                       <Tooltip 
-                        formatter={(value: number) => [`د.إ${value.toFixed(2)}`, 'Amount']}
+                        formatter={(value: number) => [formatCurrency(value), 'Amount']}
                         labelFormatter={(label) => `Category: ${label}`}
                       />
                     </PieChart>
@@ -370,15 +406,15 @@ const Dashboard = () => {
             <div className="space-y-4">
               <div className="flex justify-between text-sm">
                 <span>Current Savings</span>
-                <span>د.إ{actualSavings.toFixed(2)} / د.إ{savingsGoal.toFixed(2)}</span>
+                <span>{formatCurrency(actualSavings)} / {formatCurrency(savingsGoal)}</span>
               </div>
               <Progress value={savingsProgress} className="h-3" />
               <p className="text-sm text-muted-foreground">
                 {actualSavings >= savingsGoal 
                   ? "🎉 Congratulations! You've reached your savings goal!"
                   : actualSavings >= 0
-                  ? `You need د.إ${(savingsGoal - actualSavings).toFixed(2)} more to reach your goal.`
-                  : `You're د.إ${Math.abs(actualSavings).toFixed(2)} in the red this month.`
+                  ? `You need ${formatCurrency(savingsGoal - actualSavings)} more to reach your goal.`
+                  : `You're ${formatCurrency(Math.abs(actualSavings))} in the red this month.`
                 }
               </p>
               <SavingsChart actualSavings={actualSavings} savingsGoal={savingsGoal} />
