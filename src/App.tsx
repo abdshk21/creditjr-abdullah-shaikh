@@ -21,6 +21,7 @@ import MyAccountPage from "./pages/MyAccountPage";
 import ContactPage from "./pages/ContactPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AuthPage from "./components/AuthPage";
+import UserExistsPage from "./pages/UserExistsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -113,6 +114,7 @@ const App = () => (
                 </ProtectedRoute>
               } />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/user-exists" element={<UserExistsPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

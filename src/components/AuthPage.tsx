@@ -28,6 +28,30 @@ const AuthPage = () => {
     }
   }, [navigate]);
 
+  const checkEmailExists = async (email: string): Promise<boolean> => {
+    try {
+      // Try to get user data by email using a sign-in attempt with a dummy password
+      // This is a workaround since Supabase doesn't provide a direct email check
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password: 'dummy-password-for-check'
+      });
+      
+      // If error contains "Invalid login credentials", user exists but password is wrong
+      // If error contains "Email not confirmed", user exists but email not verified
+      // If error contains other messages, we need to check the specific error
+      if (error) {
+        return error.message.toLowerCase().includes('invalid login credentials') || 
+               error.message.toLowerCase().includes('email not confirmed');
+      }
+      
+      return false; // This shouldn't happen with dummy password
+    } catch (error) {
+      // If there's any error, assume user doesn't exist to allow signup
+      return false;
+    }
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -41,11 +65,19 @@ const AuthPage = () => {
         });
         if (error) throw error;
         navigate('/');
-        } else {
-          const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
+      } else {
+        // Check if email already exists before attempting signup
+        const emailExists = await checkEmailExists(email);
+        
+        if (emailExists) {
+          navigate('/user-exists');
+          return;
+        }
+
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
             emailRedirectTo: `${window.location.origin}/`
           }
         });
@@ -56,7 +88,7 @@ const AuthPage = () => {
             error.message.toLowerCase().includes('user already exists') ||
             error.message.toLowerCase().includes('email')  // Covers generic duplicate email cases
           ) {
-            setError('An account with this email already exists. Please log in instead.');
+            navigate('/user-exists');
             return;
           } else {
             setError(error.message);
@@ -66,13 +98,11 @@ const AuthPage = () => {
       
         // Just in case: fallback if no error is thrown but no user is created
         if (!data?.user) {
-          setError('An account with this email already exists. Please log in instead.');
+          navigate('/user-exists');
           return;
         }
       
         setShowEmailConfirmation(true);
-
-        
       }
     } catch (error: any) {
       // Error already handled above for signup, this is for login errors
