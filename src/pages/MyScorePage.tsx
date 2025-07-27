@@ -290,7 +290,7 @@ const MyScorePage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-8 text-center">
-              <div className="relative" style={{ width: 280, height: 180 }}>
+              <div className="relative mx-auto" style={{ width: 280, height: 180 }}>
                 <svg width={280} height={180} className="transform rotate-0">
                   <path
                     d={`M 20 140 A 120 120 0 0 1 260 140`}
