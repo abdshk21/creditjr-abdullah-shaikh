@@ -314,6 +314,9 @@ const MyScorePage = () => {
                   <div className="text-4xl font-bold" style={{ color: getScoreColor(currentScore) }}>
                     {currentScore}
                   </div>
+                  <div className="text-xs text-gray-500">
+                    out of 850
+                  </div>
                   <div className="text-sm font-medium text-gray-600 mt-1">
                     {getScoreLabel(currentScore)}
                   </div>
