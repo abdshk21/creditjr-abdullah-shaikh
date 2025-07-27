@@ -35,7 +35,7 @@ const AddTransaction = ({ onSave, onCancel }: AddTransactionProps) => {
   const [note, setNote] = useState('');
   const [date, setDate] = useState<Date>(new Date());
   const [wallet, setWallet] = useState('');
-  const [customCategories, setCustomCategories] = useState<{category_name: string}[]>([]);
+  const [customCategories, setCustomCategories] = useState<{category_name: string, icon: string}[]>([]);
 
   // Fetch custom categories
   useEffect(() => {
@@ -43,12 +43,10 @@ const AddTransaction = ({ onSave, onCancel }: AddTransactionProps) => {
       if (!user?.id) return;
       
       try {
-        // Use raw query to avoid TypeScript complexity
-        const { data } = await (supabase as any)
+        const { data } = await supabase
           .from('custom_categories')
-          .select('category_name')
-          .eq('user_id', user.id)
-          .eq('type', 'expense');
+          .select('category_name, icon')
+          .eq('user_id', user.id);
         
         if (data) {
           setCustomCategories(data);
@@ -77,7 +75,7 @@ const AddTransaction = ({ onSave, onCancel }: AddTransactionProps) => {
     ...customCategories.map((cat: any) => ({ 
       value: cat.category_name || '', 
       label: cat.category_name || '', 
-      icon: '📂' // Default icon for custom categories
+      icon: cat.icon || '📂'
     }))
   ];
 
