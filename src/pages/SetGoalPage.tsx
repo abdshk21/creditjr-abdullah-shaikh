@@ -39,6 +39,7 @@ const SetGoalPage = () => {
   // Custom Category states
   const [addCategoryDialogOpen, setAddCategoryDialogOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryIcon, setNewCategoryIcon] = useState('📂');
 
   const defaultCategories = [
     { name: 'Food', icon: '🍽️' },
@@ -248,14 +249,15 @@ const SetGoalPage = () => {
 
   // Custom Category Mutations
   const createCustomCategoryMutation = useMutation({
-    mutationFn: async (categoryName: string) => {
+    mutationFn: async ({ categoryName, icon }: { categoryName: string; icon: string }) => {
       if (!user?.id) throw new Error('User not authenticated');
 
       const { error } = await supabase
         .from('custom_categories')
         .insert({
           user_id: user.id,
-          category_name: categoryName
+          category_name: categoryName,
+          icon: icon
         });
       
       if (error) throw error;
@@ -265,6 +267,7 @@ const SetGoalPage = () => {
       queryClient.invalidateQueries({ queryKey: ['envelopes', user?.id] });
       toast.success('Custom category created successfully');
       setNewCategoryName('');
+      setNewCategoryIcon('📂');
       setAddCategoryDialogOpen(false);
     },
     onError: (error) => {
@@ -342,7 +345,7 @@ const SetGoalPage = () => {
   // Combine default and custom categories
   const allCategories = [
     ...defaultCategories,
-    ...(customCategories?.map(cat => ({ name: cat.category_name, icon: '📂' })) || [])
+    ...(customCategories?.map(cat => ({ name: cat.category_name, icon: cat.icon || '📂' })) || [])
   ];
 
   // Set the input values when existing goals are loaded
@@ -878,34 +881,71 @@ const SetGoalPage = () => {
                           maxLength={20}
                         />
                       </div>
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="outline" 
-                          onClick={() => {
-                            setAddCategoryDialogOpen(false);
-                            setNewCategoryName('');
-                          }}
-                        >
-                          Cancel
-                        </Button>
-                        <Button 
-                          onClick={() => {
-                            if (!newCategoryName.trim()) {
-                              toast.error('Please enter a category name');
-                              return;
-                            }
-                            if (allCategories.some(cat => cat.name.toLowerCase() === newCategoryName.toLowerCase())) {
-                              toast.error('Category name already exists');
-                              return;
-                            }
-                            createCustomCategoryMutation.mutate(newCategoryName.trim());
-                          }}
-                          className="bg-purple-600 hover:bg-purple-700"
-                          disabled={createCustomCategoryMutation.isPending}
-                        >
-                          {createCustomCategoryMutation.isPending ? 'Creating...' : 'Create Category'}
-                        </Button>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="category-icon">Choose Icon</Label>
+                        <div className="grid grid-cols-5 gap-2">
+                          {[
+                            '🛒', '✈️', '🎨', '📚', '🎮', 
+                            '☕', '🏠', '👕', '💄', '🚗',
+                            '🎬', '🏥', '💊', '🍕', '🎁',
+                            '💰', '📱', '🏋️', '🌱', '📂'
+                          ].map((icon) => (
+                            <button
+                              key={icon}
+                              type="button"
+                              onClick={() => setNewCategoryIcon(icon)}
+                              className={`text-2xl p-3 rounded-lg border-2 hover:bg-accent transition-colors ${
+                                newCategoryIcon === icon 
+                                  ? 'border-primary bg-primary/10' 
+                                  : 'border-border hover:border-primary/50'
+                              }`}
+                            >
+                              {icon}
+                            </button>
+                          ))}
+                        </div>
+                        <Input
+                          id="category-icon"
+                          value={newCategoryIcon}
+                          onChange={(e) => setNewCategoryIcon(e.target.value)}
+                          placeholder="Or enter custom emoji"
+                          maxLength={4}
+                          className="mt-2"
+                        />
                       </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setAddCategoryDialogOpen(false);
+                          setNewCategoryName('');
+                          setNewCategoryIcon('📂');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          if (!newCategoryName.trim()) {
+                            toast.error('Please enter a category name');
+                            return;
+                          }
+                          if (allCategories.some(cat => cat.name.toLowerCase() === newCategoryName.toLowerCase())) {
+                            toast.error('Category name already exists');
+                            return;
+                          }
+                          createCustomCategoryMutation.mutate({ 
+                            categoryName: newCategoryName.trim(), 
+                            icon: newCategoryIcon 
+                          });
+                        }}
+                        className="bg-purple-600 hover:bg-purple-700"
+                        disabled={createCustomCategoryMutation.isPending}
+                      >
+                        {createCustomCategoryMutation.isPending ? 'Creating...' : 'Create Category'}
+                      </Button>
                     </div>
                   </DialogContent>
                 </Dialog>
