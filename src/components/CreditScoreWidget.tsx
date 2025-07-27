@@ -49,6 +49,9 @@ const CreditScoreWidget = ({ size = 'small', showTitle = true, className = '' }:
           <div className={`font-bold ${size === 320 ? 'text-4xl' : 'text-2xl'} text-center`} style={{ color: getScoreColor(score) }}>
             {score}
           </div>
+          <div className={`text-gray-500 mt-1 ${size === 320 ? 'text-xs' : 'text-xs'} text-center`}>
+            out of 850
+          </div>
           <div className={`font-medium text-gray-600 mt-1 ${size === 320 ? 'text-sm' : 'text-xs'} text-center`}>
             {getScoreLabel(score)}
           </div>
