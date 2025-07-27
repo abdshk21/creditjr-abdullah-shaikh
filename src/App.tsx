@@ -16,6 +16,7 @@ import MyScorePage from "./pages/MyScorePage";
 import RecommendationsPage from "./pages/RecommendationsPage";
 import BlogsPage from "./pages/BlogsPage";
 import QuizPage from "./pages/QuizPage";
+import QuizDetailPage from "./pages/QuizDetailPage";
 import MyAccountPage from "./pages/MyAccountPage";
 import ContactPage from "./pages/ContactPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -86,6 +87,13 @@ const App = () => (
               <Route path="/quiz" element={
                 <ProtectedRoute>
                   <QuizPage />
+                  <BottomNavigation />
+                  <FinBuddy />
+                </ProtectedRoute>
+              } />
+              <Route path="/quiz/:quizId" element={
+                <ProtectedRoute>
+                  <QuizDetailPage />
                   <BottomNavigation />
                   <FinBuddy />
                 </ProtectedRoute>

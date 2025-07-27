@@ -1,8 +1,8 @@
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Brain } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import QuizList from '@/components/QuizList';
 
 const QuizPage = () => {
   const navigate = useNavigate();
@@ -20,27 +20,14 @@ const QuizPage = () => {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-3xl font-bold text-[#102c54]">Quiz</h1>
+          <h1 className="text-3xl font-bold text-[#102c54] flex items-center gap-3">
+            <Brain className="h-8 w-8" />
+            Knowledge Quiz
+          </h1>
         </div>
 
-        {/* Coming Soon Card */}
-        <Card className="shadow-lg border-0">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-[#102c54] flex items-center justify-center gap-3">
-              <Brain className="h-8 w-8" />
-              Knowledge Quiz
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-center p-8">
-            <div className="text-6xl mb-6">🧠</div>
-            <div className="text-xl font-semibold text-gray-700 mb-4">
-              Coming Soon!
-            </div>
-            <div className="text-gray-600 max-w-md mx-auto">
-              Test your financial knowledge with interactive quizzes and earn points while learning about money management!
-            </div>
-          </CardContent>
-        </Card>
+        {/* Quiz List */}
+        <QuizList />
       </div>
     </div>
   );
