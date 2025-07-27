@@ -12,6 +12,7 @@ import { CalendarIcon, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 import { getSelectedCurrency } from '@/lib/currency';
 
 interface Transaction {
@@ -35,29 +36,28 @@ const AddTransaction = ({ onSave, onCancel }: AddTransactionProps) => {
   const [note, setNote] = useState('');
   const [date, setDate] = useState<Date>(new Date());
   const [wallet, setWallet] = useState('');
-  const [customCategories, setCustomCategories] = useState<{category_name: string, icon: string}[]>([]);
 
-  // Fetch custom categories
-  useEffect(() => {
-    const fetchCustomCategories = async () => {
-      if (!user?.id) return;
+  // Fetch custom categories using React Query
+  const { data: customCategories = [] } = useQuery({
+    queryKey: ['custom_categories', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
       
-      try {
-        const { data } = await supabase
-          .from('custom_categories')
-          .select('category_name, icon')
-          .eq('user_id', user.id);
-        
-        if (data) {
-          setCustomCategories(data);
-        }
-      } catch (err) {
-        console.error('Error fetching custom categories:', err);
+      const { data, error } = await supabase
+        .from('custom_categories')
+        .select('category_name, icon')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching custom categories:', error);
+        return [];
       }
-    };
-
-    fetchCustomCategories();
-  }, [user?.id]);
+      
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
 
   const defaultCategories = [
     { value: 'Food', label: 'Food', icon: '🍽️' },
@@ -72,12 +72,16 @@ const AddTransaction = ({ onSave, onCancel }: AddTransactionProps) => {
   // Combine default and custom categories
   const allCategories = [
     ...defaultCategories,
-    ...customCategories.map((cat: any) => ({ 
-      value: cat.category_name || '', 
-      label: cat.category_name || '', 
+    ...customCategories.map((cat) => ({ 
+      value: cat.category_name, 
+      label: cat.category_name, 
       icon: cat.icon || '📂'
     }))
   ];
+
+  // Debug log to see what categories we have
+  console.log('All categories in AddTransaction:', allCategories);
+  console.log('Custom categories fetched:', customCategories);
 
   const wallets = [
     { value: 'Orange Wallet', label: 'Orange Wallet' },
@@ -147,16 +151,16 @@ const AddTransaction = ({ onSave, onCancel }: AddTransactionProps) => {
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {allCategories.map((cat) => (
-                      <SelectItem key={cat.value} value={cat.value}>
-                        <span className="flex items-center gap-2">
-                          <span>{cat.icon}</span>
-                          <span>{cat.label}</span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                   <SelectContent className="bg-background border shadow-lg z-50">
+                     {allCategories.map((cat) => (
+                       <SelectItem key={cat.value} value={cat.value} className="flex items-center gap-2 hover:bg-accent">
+                         <div className="flex items-center gap-2">
+                           <span className="text-lg">{cat.icon}</span>
+                           <span>{cat.label}</span>
+                         </div>
+                       </SelectItem>
+                     ))}
+                   </SelectContent>
                 </Select>
               </div>
 
