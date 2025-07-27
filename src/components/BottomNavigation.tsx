@@ -1,6 +1,6 @@
 
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, History, Target, Award, Lightbulb, BookOpen, Brain, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, History, Target, Award, Lightbulb, BookOpen, Brain, MessageSquare, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const BottomNavigation = () => {
@@ -13,6 +13,12 @@ const BottomNavigation = () => {
       label: 'Dashboard',
       icon: LayoutDashboard,
       path: '/'
+    },
+    {
+      id: 'add-transaction',
+      label: 'Add',
+      icon: Plus,
+      path: '/add-transaction'
     },
     {
       id: 'goal',
