@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Target, TrendingUp, User, LogOut, PiggyBank, Plus, Minus, Settings, Mail } from 'lucide-react';
+import { ArrowLeft, Target, TrendingUp, User, LogOut, PiggyBank, Plus, Minus, Settings, Mail, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -277,6 +277,29 @@ const SetGoalPage = () => {
       } else {
         toast.error('Failed to create custom category');
       }
+    }
+  });
+
+  const deleteCustomCategoryMutation = useMutation({
+    mutationFn: async (categoryId: string) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('custom_categories')
+        .delete()
+        .eq('id', categoryId)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['custom_categories', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['envelopes', user?.id] });
+      toast.success('Custom category deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Error deleting custom category:', error);
+      toast.error('Failed to delete custom category');
     }
   });
 
@@ -808,7 +831,8 @@ const SetGoalPage = () => {
                     const progress = getProgressPercentage(category.name);
                     const spent = getCurrentMonthSpending(category.name);
                     const target = getEnvelopeTarget(category.name);
-                    const isCustom = customCategories?.some(cat => cat.category_name === category.name);
+                     const isCustom = customCategories?.some(cat => cat.category_name === category.name);
+                     const customCategory = customCategories?.find(cat => cat.category_name === category.name);
                     
                     return (
                       <div
@@ -817,18 +841,21 @@ const SetGoalPage = () => {
                         className="cursor-pointer group relative"
                       >
                         <div className="bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-purple-300 hover:shadow-md transition-all duration-200 group-hover:scale-105">
-                          {isCustom && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Delete functionality removed for clean rebuild
-                              }}
-                              className="absolute top-1 right-1 text-red-500 hover:text-red-700 text-xs"
-                              title="Delete custom category"
-                            >
-                              ✕
-                            </button>
-                          )}
+                           {isCustom && customCategory && (
+                             <button
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 if (confirm(`Are you sure you want to delete the "${category.name}" category?`)) {
+                                   deleteCustomCategoryMutation.mutate(customCategory.id);
+                                 }
+                               }}
+                               className="absolute top-1 right-1 p-1 rounded-full bg-red-100 hover:bg-red-200 text-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                               title="Delete custom category"
+                               disabled={deleteCustomCategoryMutation.isPending}
+                             >
+                               <Trash2 size={12} />
+                             </button>
+                           )}
                           <div className="text-center">
                             <div className="text-4xl mb-2">{category.icon}</div>
                             <div className="text-sm font-medium text-gray-700 mb-2">{category.name}</div>
