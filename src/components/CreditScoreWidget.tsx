@@ -45,7 +45,7 @@ const CreditScoreWidget = ({ size = 'small', showTitle = true, className = '' }:
           />
         </svg>
         {/* Score text - perfectly centered */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ top: '20%' }}>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
           <div className={`font-bold ${size === 320 ? 'text-4xl' : 'text-2xl'} text-center`} style={{ color: getScoreColor(score) }}>
             {score}
           </div>
