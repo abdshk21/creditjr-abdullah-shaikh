@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      blogs: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          summary: string | null
+          thumbnail_url: string | null
+          title: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          summary?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          summary?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+        }
+        Relationships: []
+      }
+      contact_queries: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          message: string | null
+          name: string | null
+          subject: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string | null
+          name?: string | null
+          subject?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string | null
+          name?: string | null
+          subject?: string | null
+        }
+        Relationships: []
+      }
       credit_score: {
         Row: {
           breakdown: Json | null
@@ -43,30 +97,21 @@ export type Database = {
       }
       custom_categories: {
         Row: {
-          color: string | null
+          category_name: string
           created_at: string
-          icon: string | null
           id: string
-          name: string
-          updated_at: string
           user_id: string
         }
         Insert: {
-          color?: string | null
+          category_name: string
           created_at?: string
-          icon?: string | null
           id?: string
-          name: string
-          updated_at?: string
           user_id: string
         }
         Update: {
-          color?: string | null
+          category_name?: string
           created_at?: string
-          icon?: string | null
           id?: string
-          name?: string
-          updated_at?: string
           user_id?: string
         }
         Relationships: []

@@ -39,8 +39,6 @@ const SetGoalPage = () => {
   // Custom Category states
   const [addCategoryDialogOpen, setAddCategoryDialogOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [newCategoryIcon, setNewCategoryIcon] = useState('📦');
-  const [editingCategory, setEditingCategory] = useState<string | null>(null);
 
   const defaultCategories = [
     { name: 'Food', icon: '🍽️' },
@@ -250,22 +248,24 @@ const SetGoalPage = () => {
 
   // Custom Category Mutations
   const createCustomCategoryMutation = useMutation({
-    mutationFn: async ({ name, icon }: { name: string; icon: string }) => {
+    mutationFn: async (categoryName: string) => {
       if (!user?.id) throw new Error('User not authenticated');
 
       const { error } = await supabase
         .from('custom_categories')
         .insert({
           user_id: user.id,
-          name: name,
-          icon: icon
+          category_name: categoryName
         });
       
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['custom_categories', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['envelopes', user?.id] });
       toast.success('Custom category created successfully');
+      setNewCategoryName('');
+      setAddCategoryDialogOpen(false);
     },
     onError: (error) => {
       console.error('Error creating custom category:', error);
@@ -274,27 +274,6 @@ const SetGoalPage = () => {
       } else {
         toast.error('Failed to create custom category');
       }
-    }
-  });
-
-  const deleteCustomCategoryMutation = useMutation({
-    mutationFn: async (categoryId: string) => {
-      if (!user?.id) throw new Error('User not authenticated');
-
-      const { error } = await supabase
-        .from('custom_categories')
-        .delete()
-        .eq('id', categoryId);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['custom_categories', user?.id] });
-      toast.success('Custom category deleted successfully');
-    },
-    onError: (error) => {
-      console.error('Error deleting custom category:', error);
-      toast.error('Failed to delete custom category');
     }
   });
 
@@ -363,7 +342,7 @@ const SetGoalPage = () => {
   // Combine default and custom categories
   const allCategories = [
     ...defaultCategories,
-    ...(customCategories?.map(cat => ({ name: cat.name, icon: cat.icon })) || [])
+    ...(customCategories?.map(cat => ({ name: cat.category_name, icon: '📂' })) || [])
   ];
 
   // Set the input values when existing goals are loaded
@@ -826,7 +805,7 @@ const SetGoalPage = () => {
                     const progress = getProgressPercentage(category.name);
                     const spent = getCurrentMonthSpending(category.name);
                     const target = getEnvelopeTarget(category.name);
-                    const isCustom = customCategories?.some(cat => cat.name === category.name);
+                    const isCustom = customCategories?.some(cat => cat.category_name === category.name);
                     
                     return (
                       <div
@@ -839,10 +818,7 @@ const SetGoalPage = () => {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const customCat = customCategories?.find(cat => cat.name === category.name);
-                                if (customCat) {
-                                  deleteCustomCategoryMutation.mutate(customCat.id);
-                                }
+                                // Delete functionality removed for clean rebuild
                               }}
                               className="absolute top-1 right-1 text-red-500 hover:text-red-700 text-xs"
                               title="Delete custom category"
@@ -902,38 +878,12 @@ const SetGoalPage = () => {
                           maxLength={20}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="category-icon">Icon</Label>
-                        <div className="flex gap-2 flex-wrap">
-                          {['🛒', '✈️', '🎨', '📚', '🎮', '☕', '🏠', '👕', '💄', '🚗'].map((icon) => (
-                            <button
-                              key={icon}
-                              type="button"
-                              onClick={() => setNewCategoryIcon(icon)}
-                              className={`text-2xl p-2 rounded border-2 hover:bg-gray-50 ${
-                                newCategoryIcon === icon ? 'border-purple-500 bg-purple-50' : 'border-gray-200'
-                              }`}
-                            >
-                              {icon}
-                            </button>
-                          ))}
-                        </div>
-                        <Input
-                          id="category-icon"
-                          value={newCategoryIcon}
-                          onChange={(e) => setNewCategoryIcon(e.target.value)}
-                          placeholder="Or enter custom emoji"
-                          maxLength={2}
-                          className="mt-2"
-                        />
-                      </div>
                       <div className="flex justify-end gap-2">
                         <Button 
                           variant="outline" 
                           onClick={() => {
                             setAddCategoryDialogOpen(false);
                             setNewCategoryName('');
-                            setNewCategoryIcon('📦');
                           }}
                         >
                           Cancel
@@ -948,13 +898,7 @@ const SetGoalPage = () => {
                               toast.error('Category name already exists');
                               return;
                             }
-                            createCustomCategoryMutation.mutate({
-                              name: newCategoryName.trim(),
-                              icon: newCategoryIcon
-                            });
-                            setAddCategoryDialogOpen(false);
-                            setNewCategoryName('');
-                            setNewCategoryIcon('📦');
+                            createCustomCategoryMutation.mutate(newCategoryName.trim());
                           }}
                           className="bg-purple-600 hover:bg-purple-700"
                           disabled={createCustomCategoryMutation.isPending}
