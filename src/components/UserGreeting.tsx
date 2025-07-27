@@ -11,7 +11,7 @@ const UserGreeting = () => {
   const greeting = displayName ? `Welcome, ${displayName}` : `Welcome, ${user.email}`;
 
   return (
-    <div className="text-sm font-medium text-gray-700 font-sans">
+    <div className="text-sm font-medium font-sans">
       {greeting}
     </div>
   );
